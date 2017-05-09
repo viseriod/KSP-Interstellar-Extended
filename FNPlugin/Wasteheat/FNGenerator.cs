@@ -155,6 +155,7 @@ namespace FNPlugin
         protected float previousDeltaTime;
 
         protected PartResource megajouleResource;
+	    protected PartResource electricChargeResource;
         protected PowerStates _powerState;
 
         protected Animation anim;
@@ -311,14 +312,19 @@ namespace FNPlugin
             // calculate WasteHeat Capacity
             if (maintainsMegaWattPowerBuffer)
             {
-                var wasteheatPowerResource = part.Resources[FNResourceManager.FNRESOURCE_WASTEHEAT];
-                var ratio = wasteheatPowerResource.amount / wasteheatPowerResource.maxAmount;
-                wasteheatPowerResource.maxAmount = part.mass * 1.0e+3 * wasteHeatMultiplier;
-                wasteheatPowerResource.amount = wasteheatPowerResource.maxAmount * ratio;
+				// calculate WasteHeat Capacity
+				var wasteheatPowerResource = part.Resources.FirstOrDefault(r => r.resourceName == FNResourceManager.FNRESOURCE_WASTEHEAT);
+				if (wasteheatPowerResource != null)
+				{
+					var wasteheat_ratio = Math.Min(wasteheatPowerResource.amount / wasteheatPowerResource.maxAmount, 0.95);
+					wasteheatPowerResource.maxAmount = part.mass * 1.0e+3 * wasteHeatMultiplier;
+					wasteheatPowerResource.amount = wasteheatPowerResource.maxAmount * wasteheat_ratio;
+				}
             }
 
             previousDeltaTime = TimeWarp.fixedDeltaTime - 1.0e-6f;
             megajouleResource = part.Resources[FNResourceManager.FNRESOURCE_MEGAJOULES];
+			electricChargeResource = part.Resources[FNResourceManager.STOCK_RESOURCE_ELECTRICCHARGE];
 
             base.OnStart(state);
             generatorType = originalName;
@@ -369,7 +375,7 @@ namespace FNPlugin
             if (!isLimitedByMinThrotle && part.FindModuleImplementing<MicrowavePowerReceiver>() == null)
             {
                 Debug.Log("[WarpPlugin] Generator Force Activated");
-                this.part.force_activate();
+                part.force_activate();
             }
 
             anim = part.FindModelAnimators(animName).FirstOrDefault();
@@ -437,11 +443,7 @@ namespace FNPlugin
 
             Debug.Log("[KSPI] - generator is currently connected to " + part.attachNodes.Count  + " parts");
             // otherwise look for other non selfcontained thermal sources that is not already connected
-            PowerSourceSearchResult searchResult;
-            if (chargedParticleMode)
-                searchResult = FindChargedParticleSource();
-            else
-                searchResult = FindThermalPowerSource();
+	        PowerSourceSearchResult searchResult = chargedParticleMode ? FindChargedParticleSource() : FindThermalPowerSource();
 
             // quit if we failed to find anything
             if (searchResult == null)
@@ -706,7 +708,7 @@ namespace FNPlugin
                     : MaxStableMegaWattPower;
 
                 if (maintainsMegaWattPowerBuffer)
-                    UpdateMegaWattPowerBuffer(maxStableMegaWattPower);
+                    UpdateMegaWattPowerBuffer();
 
                 // don't produce any power when our reactor has stopped
                 if (maxStableMegaWattPower <= 0)
@@ -784,14 +786,14 @@ namespace FNPlugin
 
                     requested_power_per_second = Math.Max(Math.Min(maxChargedPower, charged_power_currently_needed / _totalEff), attachedPowerSource.MinimumPower * attachedPowerSource.ChargedPowerRatio);
 
-                    double input_power = consumeFNResource(requested_power_per_second * TimeWarp.fixedDeltaTime, FNResourceManager.FNRESOURCE_CHARGED_PARTICLES);
+                    double received_power_per_second = consumeFNResourcePerSecond(requested_power_per_second, FNResourceManager.FNRESOURCE_CHARGED_PARTICLES);
 
-                    var effective_input_power = input_power * _totalEff;
+                    var effective_input_power_per_second = received_power_per_second * _totalEff;
 
                     if (!CheatOptions.IgnoreMaxTemperature)
-                        consumeFNResource(effective_input_power, FNResourceManager.FNRESOURCE_WASTEHEAT);
+                        consumeFNResourcePerSecond(effective_input_power_per_second, FNResourceManager.FNRESOURCE_WASTEHEAT);
 
-                    electricdtps = Math.Max(effective_input_power / TimeWarp.fixedDeltaTime, 0.0);
+                    electricdtps = Math.Max(effective_input_power_per_second, 0.0);
                     max_electricdtps = maxChargedPower * _totalEff;
                 }
                 outputPower = -supplyFNResourcePerSecondWithMax(electricdtps, max_electricdtps, FNResourceManager.FNRESOURCE_MEGAJOULES);
@@ -827,7 +829,7 @@ namespace FNPlugin
             }
         }
 
-        private void UpdateMegaWattPowerBuffer(double maxStableMegaWattPower)
+        private void UpdateMegaWattPowerBuffer()
         {
             if (maxStableMegaWattPower != _previousMaxStableMegaWattPower)
                 _powerState = PowerStates.powerChange;
@@ -924,14 +926,12 @@ namespace FNPlugin
                 else
                     powerDownFraction -= 0.01;
 
-                PartResource megajouleResource = part.Resources.FirstOrDefault(r => r.resourceName == FNResourceManager.FNRESOURCE_MEGAJOULES);
                 if (megajouleResource != null)
                 {
                     megajouleResource.maxAmount = Math.Max(0.0001, megajouleResource.maxAmount * powerDownFraction);
                     megajouleResource.amount = Math.Min(megajouleResource.maxAmount, megajouleResource.amount);
                 }
 
-                PartResource electricChargeResource = part.Resources.FirstOrDefault(r => r.resourceName == FNResourceManager.STOCK_RESOURCE_ELECTRICCHARGE);
                 if (electricChargeResource != null)
                 {
                     electricChargeResource.maxAmount = Math.Max(0.0001, electricChargeResource.maxAmount * powerDownFraction);
@@ -940,14 +940,12 @@ namespace FNPlugin
             }
             else
             {
-                PartResource megajouleResource = part.Resources.FirstOrDefault(r => r.resourceName == FNResourceManager.FNRESOURCE_MEGAJOULES);
                 if (megajouleResource != null)
                 {
                     megajouleResource.maxAmount = 0.0001;
                     megajouleResource.amount = 0;
                 }
 
-                PartResource electricChargeResource = part.Resources.FirstOrDefault(r => r.resourceName == FNResourceManager.STOCK_RESOURCE_ELECTRICCHARGE);
                 if (electricChargeResource != null)
                 {
                     electricChargeResource.maxAmount = 0.0001;
