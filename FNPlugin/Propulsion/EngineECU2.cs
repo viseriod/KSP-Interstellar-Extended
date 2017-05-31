@@ -20,6 +20,8 @@ namespace FNPlugin
         public bool hasMultipleConfigurations = false;
         private UIPartActionWindow tweakableUI;
         StartState CurState;
+        ShipConstruct CurShip;
+
 
         // Persistant
         [KSPField(isPersistant = true)]
@@ -111,17 +113,27 @@ namespace FNPlugin
                 EngineGenerationType = GenerationType.Mk2;
         }
 
-        [KSPEvent(active = true, advancedTweakable = true, guiActive = true, guiActiveEditor = false, name = "HideUsableFuelsToggle", guiName = "Hide Unusable Configurations")]
+        [KSPEvent(active = true, advancedTweakable = true, guiActive = true, guiActiveEditor = true, name = "HideUsableFuelsToggle", guiName = "Hide Unusable Configurations")]
         public void HideFuels()
         {
             hideEmpty = true;
             Events["ShowFuels"].active = hideEmpty; // will activate the event (i.e. show the gui button) if the process is not enabled
             Events["HideFuels"].active = !hideEmpty; // will show the button when the process IS enabled
             UpdateusefulConfigurations();
+
             InitializeFuelSelector();
-            UpdateFuel();
+
+            if (CurState.ToString().Contains(StartState.Editor.ToString()))
+            {
+
+                UpdateResources();
+                selectedTank = FuelConfigurations.IndexOf(FuelConfigurations.FirstOrDefault(g => g.ConfigName == ActiveConfiguration.ConfigName));
+                selectedTankName = FuelConfigurations[selectedTank].ConfigName;
+            }
+            UpdateFuel(CurState.ToString().Contains(StartState.Editor.ToString()));
+            UpdateFromGUI();
         }
-        [KSPEvent(active = false, advancedTweakable = true, guiActive = true, guiActiveEditor = false, name = "HideUsableFuelsToggle", guiName = "Show All Configurations")]
+        [KSPEvent(active = false, advancedTweakable = true, guiActive = true, guiActiveEditor = true, name = "HideUsableFuelsToggle", guiName = "Show All Configurations")]
         public void ShowFuels()
         {
             FuelConfiguration CurConfig = ActiveConfiguration;
@@ -130,9 +142,8 @@ namespace FNPlugin
             Events["HideFuels"].active = !hideEmpty; // will show the button when the process IS enabled
             selectedFuel = ActiveConfigurations.IndexOf(CurConfig);
             InitializeFuelSelector();
-            UpdateFuel();
-
-
+            UpdateFuel(CurState.ToString().Contains(StartState.Editor.ToString()));
+            UpdateFromGUI();
         }
         public void InitializeGUI()
         {
@@ -159,7 +170,7 @@ namespace FNPlugin
                 chooseField.guiActive = true;
                 chooseField.guiActiveEditor = true;
                 if (selectedFuel >= ActiveConfigurations.Count) selectedFuel = ActiveConfigurations.Count - 1;
-                activeConfiguration = ActiveConfigurations[selectedFuel];
+               // activeConfiguration = ActiveConfigurations[selectedFuel];
             }
 
             Debug.Log("Selected Fuel # " + selectedFuel);
@@ -227,15 +238,15 @@ namespace FNPlugin
         private void UpdateEditorGUI(BaseField field, object oldFieldValueObj)
         {
             Debug.Log("Editor Gui Updated");
-            UpdateFromGUI(field, oldFieldValueObj);
-            selectedTank = selectedFuel;
-            selectedTankName = FuelConfigurations[selectedFuel].ConfigName;
+            UpdateFromGUI();
+            selectedTank = FuelConfigurations.IndexOf(FuelConfigurations.FirstOrDefault(g => g.ConfigName == ActiveConfiguration.ConfigName));
+            selectedTankName = FuelConfigurations[selectedTank].ConfigName;
             UpdateResources();
-           
+            UpdateFuel(true);
         }
         private void UpdateFlightGUI(BaseField field, object oldFieldValueObj)
         {
-            UpdateFromGUI(field, oldFieldValueObj);
+            UpdateFromGUI();
             UpdateFuel();
         }
 
@@ -273,20 +284,27 @@ namespace FNPlugin
         private void UpdateResources()
         {
             Debug.Log("Update Resources");
-
             ConfigNode akResources = new ConfigNode();
             FuelConfiguration akConfig = new FuelConfiguration();
-            if (selectedTankName == "")
-                selectedTankName = FuelConfigurations[selectedTank].ConfigName;
-            else if
-                (FuelConfigurations[selectedTank].ConfigName == selectedTankName)
-                akConfig = FuelConfigurations[selectedTank];
-            else
-            {
-                selectedTank = FuelConfigurations.IndexOf(FuelConfigurations.FirstOrDefault(g => g.ConfigName == selectedTankName));
-                akConfig = FuelConfigurations[selectedTank];
-            }
 
+            try
+            {
+
+                if (selectedTankName == "")
+                    selectedTankName = FuelConfigurations[selectedTank].ConfigName;
+                else if
+                    (FuelConfigurations[selectedTank].ConfigName == selectedTankName)
+                    akConfig = FuelConfigurations[selectedTank];
+                else
+                {
+                    selectedTank = FuelConfigurations.IndexOf(FuelConfigurations.FirstOrDefault(g => g.ConfigName == selectedTankName));
+                    akConfig = FuelConfigurations[selectedTank];
+                }
+            }
+            catch  (Exception e)
+            {
+                Debug.Log("Exception " + e + " at Upddate Resources!");
+            }
 
             int I = 0;
             int N = 0;
@@ -299,7 +317,6 @@ namespace FNPlugin
 
             part.Resources.Clear();
 
-            // part.SetupResources();
 
             I = 0;
             N = 0;
@@ -351,28 +368,28 @@ namespace FNPlugin
         }
 
 
-        private void UpdateFromGUI(BaseField field, object oldFieldValueObj)
+        private void UpdateFromGUI()
         {
             Debug.Log("[KSP Interstellar] UpdateFromGUI is called with " + selectedFuel);
 
-            if (!FuelConfigurations.Any())
+            if (!ActiveConfigurations.Any())
             {
                 Debug.Log("[KSP Interstellar] UpdateFromGUI no FuelConfigurations found");
                 return;
             }
 
-            if (selectedFuel < FuelConfigurations.Count)
+            if (selectedFuel < ActiveConfigurations.Count)
             {
                 Debug.Log("[KSP Interstellar] UpdateFromGUI " + selectedFuel + " < orderedFuelGenerators.Count");
               //  FuelConfigurations[selectedFuel].Factor = ActiveConfiguration.Factor;
-                activeConfiguration = FuelConfigurations[selectedFuel];
+                activeConfiguration = ActiveConfigurations[selectedFuel];
             }
             else
             {
                 Debug.Log("[KSP Interstellar] UpdateFromGUI " + selectedFuel + " >= orderedFuelGenerators.Count");
-                selectedFuel = FuelConfigurations.Count - 1;
+                selectedFuel = ActiveConfigurations.Count - 1;
               //  FuelConfigurations[selectedFuel].Factor = ActiveConfiguration.Factor;
-                activeConfiguration = FuelConfigurations.Last();
+                activeConfiguration = ActiveConfigurations.Last();
             }
 
             if (activeConfiguration == null)
@@ -404,6 +421,8 @@ namespace FNPlugin
         {
             //    InitializeFuelSelector();
             //  if (activeConfiguration == null ) InitializeFuelSelector();
+           
+            part.Effect("fx_exhaustFlame_blue",1);
             base.OnUpdate();
         }
         public override void OnStart(StartState state)
@@ -414,6 +433,7 @@ namespace FNPlugin
                 Debug.Log("Already Launched: " + Launched);
                 CurState = state;
                 curEngineT = this.part.FindModuleImplementing<ModuleEngines>();
+                
 
                 InitializeGUI();
 
@@ -421,9 +441,10 @@ namespace FNPlugin
                 if (state.ToString().Contains(StartState.Editor.ToString()))
                 {
                     Debug.Log("Editor");
+                    GameEvents.onEditorShipModified.Add(OnEditorShipModified);
                     hideEmpty = false;
-                    selectedTank = selectedFuel;
-                    selectedTankName = FuelConfigurations[selectedFuel].ConfigName;
+                    selectedTank = FuelConfigurations.IndexOf(FuelConfigurations.FirstOrDefault(g => g.ConfigName == ActiveConfiguration.ConfigName));
+                    selectedTankName = FuelConfigurations[selectedTank].ConfigName;
                     UpdateResources();
                     UpdateFuel(true);
                 }
@@ -468,7 +489,6 @@ namespace FNPlugin
             base.OnInitialize();
         }
 
-        
         private IList<FuelConfiguration> usefulConfigurations;
         public IList<FuelConfiguration> UsefulConfigurations
         {
@@ -497,24 +517,30 @@ namespace FNPlugin
         }
         public void UpdateusefulConfigurations()
         {
-            IList<FuelConfiguration> akConfig = new List<FuelConfiguration>(usefulConfigurations);
+            IList<FuelConfiguration> akConfig = new List<FuelConfiguration>();
+            if (usefulConfigurations != null)
+            {
+               akConfig.AddUniqueRange(usefulConfigurations);
+            }
             usefulConfigurations = GetUsableConfigurations(FuelConfigurations);
-            if (akConfig.Equals(usefulConfigurations)) InitializeFuelSelector();
+            if (!akConfig.Equals(usefulConfigurations)) InitializeFuelSelector();
         }
 
         public IList<FuelConfiguration> GetUsableConfigurations(IList<FuelConfiguration> akConfigs)
         {
             IList<FuelConfiguration> nwConfigs = new List<FuelConfiguration>();
             int I = 0;
+            Debug.Log("GetUsableConfigurations");
             while (I < akConfigs.Count)
             {
+                
                 if (ConfigurationHasFuel(akConfigs[I]))
                 {
                     nwConfigs.Add(akConfigs[I]);
                     Debug.Log("Added: " + akConfigs[I].fuelConfigurationName);
 
                 }
-                else if (I < selectedFuel && I > 0) selectedFuel--;
+                else if (I < selectedFuel && selectedFuel > 0) selectedFuel--;
                 I++;
             }
 
@@ -523,44 +549,82 @@ namespace FNPlugin
         public bool ConfigurationHasFuel(FuelConfiguration akConfig)
         {
             bool Test = true;
-            int I = 0;
+
+        
+                int I = 0;
             while (I < akConfig.Fuels.Length)
             {
                 if (akConfig.Ratios[I] > 0)
                 {
+
+
                     double akAmount = 0;
                     double akMaxAmount = 0;
-                    PartResource akResource = this.part.Resources.Get(akConfig.Fuels[I]);
-                    if (akResource != null)
-                    {
 
-                      //  vessel.UpdateResourceSets();
-                        part.GetConnectedResourceTotals(akResource.info.id, out akAmount, out akMaxAmount);
-                        Debug.Log("Resource: " + akConfig.Fuels[I] + " has " + akAmount);
-                        if (akAmount == 0 && akMaxAmount > 0)
+                    try
+                    {
+                        if (this.part.Resources.Contains(akConfig.Fuels[I]) && !CurState.ToString().Contains(StartState.Editor.ToString()))
                         {
-                            Test = false;
-                            I = akConfig.Fuels.Length;
+                            PartResource akResource = this.part.Resources.Get(akConfig.Fuels[I]);
+                            part.GetConnectedResourceTotals(akResource.info.id, out akAmount, out akMaxAmount);
+                            Debug.Log("Resource: " + akConfig.Fuels[I] + " has " + akAmount);
+                            if (akAmount == 0)
+                            {
+                                Test = false;
+                                I = akConfig.Fuels.Length;
+                            }
                         }
-                        /*       }
-                               else
-                               {
-                                   part.vessel.resour
-                               }*/
-                    }
-                    else
-                    {
-                        Debug.Log("Resource: " + akConfig.Fuels[I] + " has " + 0);
-                        Test = false;
-                        I = akConfig.Fuels.Length;
-                    }
+                        else if(akConfig.Amount[I] > 0)
+                        {
 
+                        }
+                        else
+                        {
+                            int N = 0;
+                            List<Part> akParts = CurShip.Parts;
+                            akParts.Remove(part);
+                            while (N < akParts.Count)
+                            {
+                                if (akParts[N].Resources.Contains(akConfig.Fuels[I]))
+                                {
+                                    akAmount = akParts[N].Resources[akConfig.Fuels[I]].amount;
+                                    akMaxAmount = akParts[N].Resources[akConfig.Fuels[I]].maxAmount;
+                                    if (akAmount > 0 && akMaxAmount > 0)
+                                    {
+                                        Debug.Log("Resource: " + akConfig.Fuels[I] + " has " + akAmount);
+                                        N = akParts.Count;
+                                    }
+                                }
+                                N++;
+                            }
+                            if (N == akParts.Count)
+                            {
+                                Test = false;
+                                I = akConfig.Fuels.Length;
+                            }
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.Log("Exception " + e + " at ConfigurationHasFuel");
+                    }
                 }
 
                 I++;
             }
+            
+
 
             return Test;
+            
+        }
+        private void OnEditorShipModified(ShipConstruct akShip)
+        {
+            Debug.Log("Ship Modified!");
+            CurShip = akShip;
+            FuelConfigurations[selectedTank].SaveAmount(akShip, selectedTankName);
+            if (hideEmpty) UpdateusefulConfigurations();
         }
     }
     class FuelConfiguration : PartModule, IRescalable<FuelConfiguration>
@@ -791,28 +855,30 @@ namespace FNPlugin
             }
 
         }
-        private void SaveAmount(ShipConstruct Ship)
+        public void SaveAmount(ShipConstruct Ship, String akTank)
         {
 
           //  Debug.Log("Ship Modified!");
             try
             {
-
+                
 
                 // Debug.Log("akAmont Length: " + akAmount.Length);
                 // Debug.Log("Amount Length: " + Amount.Length);
                // Debug.Log("Part Resources Length: " + part.Resources.Count);
-                int i = 0;
-                if (part.Resources.Count == Amount.Length)
+                
+                if (part.Resources.Count == Amount.Length && akTank == fuelConfigurationName)
+                {
+                    int i = 0;
                     while (i < Amount.Length)
                     {
-                       // Debug.Log("Saving " + part.Resources[i].resourceName + " Amount " + part.Resources[i].amount);
+                        // Debug.Log("Saving " + part.Resources[i].resourceName + " Amount " + part.Resources[i].amount);
                         akAmount[i] = (float)part.Resources[i].amount;
                         i++;
                     }
 
-                strAmount = FloatArrayToString(Amount);
-
+                    strAmount = FloatArrayToString(Amount);
+                }
             }
             catch (Exception e)
             {
@@ -831,8 +897,8 @@ namespace FNPlugin
         public override void OnStart(StartState state)
         {
             if (fuelConfigurationName != akConfigName || StrMaxAmount != maxAmount) Refresh();
-
-            GameEvents.onEditorShipModified.Add(SaveAmount);
+            strAmount = FloatArrayToString(Amount);
+            //   GameEvents.onEditorShipModified.Add(SaveAmount);
             base.OnStart(state);
 
         }
