@@ -270,6 +270,9 @@ namespace FNPlugin
             get { return _requestedThermalHeat; }
             set { _requestedThermalHeat = value; }
         }
+
+        public double PowerRatio { get { return receiptPower / 100.0; } }
+
         public double PowerCapacityEfficiency
         {
             get 
@@ -451,6 +454,8 @@ namespace FNPlugin
         public double MaximumPower { get { return MaximumThermalPower; } }
 
         public double MaximumThermalPower { get { return ThermalPower; } }
+
+        public double NormalisedMaximumPower { get { return ThermalPower; } }
 
         public double MaximumChargedPower { get { return 0; } }
 
@@ -800,7 +805,7 @@ namespace FNPlugin
             thermalResource = part.Resources[FNResourceManager.FNRESOURCE_THERMALPOWER];
 
 			// calculate WasteHeat Capacity
-			partBaseWasteheat = part.mass * 1.0e+3 * wasteHeatMultiplier + (StableMaximumReactorPower * 0.05);
+			partBaseWasteheat = part.mass * 2.0e+4 * wasteHeatMultiplier;
 			var wasteheatPowerResource = part.Resources.FirstOrDefault(r => r.resourceName == FNResourceManager.FNRESOURCE_WASTEHEAT);
 			if (wasteheatPowerResource != null)
 			{
@@ -1388,7 +1393,7 @@ namespace FNPlugin
 
                             // determine allowed power
                             var maximumRecievePower = MaximumRecievePower;
-                            var currentRecievalPower = maximumRecievePower * Math.Min(PowerCapacityEfficiency, (receiptPower / 100.0f));
+                            var currentRecievalPower = maximumRecievePower * Math.Min(PowerCapacityEfficiency, PowerRatio);
                             var maximumRecievalPower = maximumRecievePower * PowerCapacityEfficiency;
 
                             // select active or compatible brandWith Converter
