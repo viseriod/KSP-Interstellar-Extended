@@ -175,7 +175,10 @@ namespace FNPlugin
         private static double _nonMicrowaveApertureDiameterMult = 1;
         public static double NonMicrowaveApertureDiameterMult { get { return _nonMicrowaveApertureDiameterMult; } }
 
-        private static double _speedOfLightMult = GameConstants.speedOfLight;
+        private static double _speedOfLight = 29979245.8;
+        public static double SpeedOfLight { get { return GameConstants.speedOfLight * _speedOfLightMult; } } 
+
+        private static double _speedOfLightMult = 0.1 ;
         public static double SpeedOfLightMult { get { return _speedOfLightMult; } }
  
         private static double _maxAtmosphericAltitudeMult = 1;
@@ -184,23 +187,23 @@ namespace FNPlugin
         private static double _minAtmosphericAirDensity = 0;
         public static double MinAtmosphericAirDensity { get { return _minAtmosphericAirDensity; } }
 
-        private static float _gravityConstant = GameConstants.STANDARD_GRAVITY;
-        public static float GravityConstant { get { return _gravityConstant; } }
+        private static double _gravityConstant = GameConstants.STANDARD_GRAVITY;
+        public static double GravityConstant { get { return _gravityConstant; } }
 
-        private static float _ispCoreTempMult = GameConstants.IspCoreTemperatureMultiplier;
-        public static float IspCoreTempMult { get { return _ispCoreTempMult; } }
+        private static double _ispCoreTempMult = GameConstants.IspCoreTemperatureMultiplier;
+        public static double IspCoreTempMult { get { return _ispCoreTempMult; } }
 
-        private static float _lowCoreTempBaseThrust = 0;
-        public static float LowCoreTempBaseThrust { get { return _lowCoreTempBaseThrust; } }
+        private static double _lowCoreTempBaseThrust = 0;
+        public static double LowCoreTempBaseThrust { get { return _lowCoreTempBaseThrust; } }
 
-        private static float _highCoreTempThrustMult = GameConstants.HighCoreTempThrustMultiplier;
-        public static float HighCoreTempThrustMult { get { return _highCoreTempThrustMult; } }
+        private static double _highCoreTempThrustMult = GameConstants.HighCoreTempThrustMultiplier;
+        public static double HighCoreTempThrustMult { get { return _highCoreTempThrustMult; } }
 
-        private static float _thrustCoreTempThreshold = 0;
-        public static float ThrustCoreTempThreshold { get { return _thrustCoreTempThreshold; } }
+        private static double _thrustCoreTempThreshold = 0;
+        public static double ThrustCoreTempThreshold { get { return _thrustCoreTempThreshold; } }
 
-        private static float _globalThermalNozzlePowerMaxThrustMult = 1;
-        public static float GlobalThermalNozzlePowerMaxThrustMult { get { return _globalThermalNozzlePowerMaxThrustMult; } }
+        private static double _globalThermalNozzlePowerMaxThrustMult = 1;
+        public static double GlobalThermalNozzlePowerMaxThrustMult { get { return _globalThermalNozzlePowerMaxThrustMult; } }
 
         private static double _globalMagneticNozzlePowerMaxThrustMult = 1;
         public static double GlobalMagneticNozzlePowerMaxThrustMult { get { return _globalMagneticNozzlePowerMaxThrustMult; } }
@@ -208,8 +211,8 @@ namespace FNPlugin
         private static double _globalElectricEnginePowerMaxThrustMult = 1;
         public static double GlobalElectricEnginePowerMaxThrustMult { get { return _globalElectricEnginePowerMaxThrustMult; } }
 
-        private static float _maxPowerDrawForExoticMatterMult = 1;
-        public static float MaxPowerDrawForExoticMatterMult { get { return _maxPowerDrawForExoticMatterMult; } }
+        private static double _maxPowerDrawForExoticMatterMult = 1;
+        public static double MaxPowerDrawForExoticMatterMult { get { return _maxPowerDrawForExoticMatterMult; } }
 
         //private static double _lfoFuelThrustModifier = GameConstants.LfoFuelThrustModifier;
         //public static double LfoFuelThrustModifier { get { return _lfoFuelThrustModifier; } }
@@ -217,11 +220,11 @@ namespace FNPlugin
         private static double _electricEngineIspMult = 1;
         public static double ElectricEngineIspMult { get { return _electricEngineIspMult; } }
 
-        private static float _electricEnginePowerPropellantIspMultLimiter = 1;
-        public static float ElectricEnginePowerPropellantIspMultLimiter { get { return _electricEnginePowerPropellantIspMultLimiter; } }
+        private static double _electricEnginePowerPropellantIspMultLimiter = 1;
+        public static double ElectricEnginePowerPropellantIspMultLimiter { get { return _electricEnginePowerPropellantIspMultLimiter; } }
 
-        private static float _electricEngineAtmosphericDensityThrustLimiter = 0;
-        public static float ElectricEngineAtmosphericDensityThrustLimiter { get { return _electricEngineAtmosphericDensityThrustLimiter; } }
+        private static double _electricEngineAtmosphericDensityThrustLimiter = 0;
+        public static double ElectricEngineAtmosphericDensityThrustLimiter { get { return _electricEngineAtmosphericDensityThrustLimiter; } }
 
         //------------------------------------------------------------------------------------------
 
@@ -271,20 +274,20 @@ namespace FNPlugin
         public static double PowerConsumptionMultiplier { get { return _powerConsumptionMultiplier; } }
 
         //----------------------------------------------------------------------------------------------
-        private static float _ispNtrPropellantModifierBase = 0;
-        public static float IspNtrPropellantModifierBase { get { return _ispNtrPropellantModifierBase; } }
+        private static double _ispNtrPropellantModifierBase = 0;
+        public static double IspNtrPropellantModifierBase { get { return _ispNtrPropellantModifierBase; } }
 
-        private static float _ispElectroPropellantModifierBase = 0;
-        public static float IspElectroPropellantModifierBase { get { return _ispElectroPropellantModifierBase; } }
+        private static double _ispElectroPropellantModifierBase = 0;
+        public static double IspElectroPropellantModifierBase { get { return _ispElectroPropellantModifierBase; } }
 
-        private static float _maxThermalNozzleIsp = GameConstants.MaxThermalNozzleIsp;
-        public static float MaxThermalNozzleIsp { get { return _maxThermalNozzleIsp; } }
+        private static double _maxThermalNozzleIsp = GameConstants.MaxThermalNozzleIsp;
+        public static double MaxThermalNozzleIsp { get { return _maxThermalNozzleIsp; } }
 
-        private static float _airflowHeatMult = GameConstants.AirflowHeatMultiplier;
-        public static float AirflowHeatMult { get { return _airflowHeatMult; } }
+        private static double _airflowHeatMult = GameConstants.AirflowHeatMultiplier;
+        public static double AirflowHeatMult { get { return _airflowHeatMult; } }
 
-        private static float _engineHeatProduction = GameConstants.EngineHeatProduction;
-        public static float EngineHeatProduction { get { return _engineHeatProduction; } }
+        private static double _engineHeatProduction = GameConstants.EngineHeatProduction;
+        public static double EngineHeatProduction { get { return _engineHeatProduction; } }
 
         private static bool _isPanelHeatingClamped = false;
         public static bool IsSolarPanelHeatingClamped { get { return _isPanelHeatingClamped; } }
@@ -306,9 +309,6 @@ namespace FNPlugin
 
         // Jet Upgrade Techs
 
-        private static string _jetUpgradeTech0 = String.Empty;
-        public static string JetUpgradeTech0 { get { return _jetUpgradeTech0; } private set { _jetUpgradeTech0 = value; } }
-
         private static string _jetUpgradeTech1 = String.Empty;
         public static string JetUpgradeTech1 { get { return _jetUpgradeTech1; } private set { _jetUpgradeTech1 = value; } }
 
@@ -318,10 +318,13 @@ namespace FNPlugin
         private static string _jetUpgradeTech3 = String.Empty;
         public static string JetUpgradeTech3 { get { return _jetUpgradeTech3; } private set { _jetUpgradeTech3 = value; } }
 
-        // Radiator Upgrade Techs
+        private static string _jetUpgradeTech4 = String.Empty;
+        public static string JetUpgradeTech4 { get { return _jetUpgradeTech4; } private set { _jetUpgradeTech4 = value; } }
 
-        private static string _radiatorUpgradeTech0 = String.Empty;
-        public static string RadiatorUpgradeTech0 { get { return _radiatorUpgradeTech0; } private set { _radiatorUpgradeTech0 = value; } }
+        private static string _jetUpgradeTech5 = String.Empty;
+        public static string JetUpgradeTech5 { get { return _jetUpgradeTech5; } private set { _jetUpgradeTech5 = value; } }
+
+        // Radiator Upgrade Techs
 
         private static string _radiatorUpgradeTech1 = String.Empty;
         public static string RadiatorUpgradeTech1 { get { return _radiatorUpgradeTech1; } private set { _radiatorUpgradeTech1 = value; } }
@@ -331,6 +334,9 @@ namespace FNPlugin
 
         private static string _radiatorUpgradeTech3 = String.Empty;
         public static string RadiatorUpgradeTech3 { get { return _radiatorUpgradeTech3; } private set { _radiatorUpgradeTech3 = value; } }
+
+        private static string _radiatorUpgradeTech4 = String.Empty;
+        public static string RadiatorUpgradeTech4 { get { return _radiatorUpgradeTech4; } private set { _radiatorUpgradeTech4 = value; } }
 
 
         private static double _radiatorTemperatureMk1 = 1850;
@@ -778,6 +784,8 @@ namespace FNPlugin
                     if (plugin_settings.HasValue("SpeedOfLightMult"))
                     {
                         _speedOfLightMult = double.Parse(plugin_settings.GetValue("SpeedOfLightMult"));
+                        _speedOfLight = GameConstants.speedOfLight * _speedOfLightMult;
+
                         Debug.Log("[KSPI] Speed Of Light Multiplier set to: " + PluginHelper.SpeedOfLightMult.ToString());
                     }
                     if (plugin_settings.HasValue("RadiationMechanicsDisabled"))
@@ -812,7 +820,7 @@ namespace FNPlugin
                     }
                     if (plugin_settings.HasValue("MaxPowerDrawForExoticMatterMult"))
                     {
-                        PluginHelper._maxPowerDrawForExoticMatterMult = float.Parse(plugin_settings.GetValue("MaxPowerDrawForExoticMatterMult"));
+                        PluginHelper._maxPowerDrawForExoticMatterMult = double.Parse(plugin_settings.GetValue("MaxPowerDrawForExoticMatterMult"));
                         Debug.Log("[KSPI] Max Power Draw For Exotic Matter Multiplier set to: " + PluginHelper.MaxPowerDrawForExoticMatterMult.ToString("0.000000"));
                     }
                     if (plugin_settings.HasValue("GravityConstant"))
@@ -822,7 +830,7 @@ namespace FNPlugin
                     }
                     if (plugin_settings.HasValue("IspCoreTempMult"))
                     {
-                        PluginHelper._ispCoreTempMult = float.Parse(plugin_settings.GetValue("IspCoreTempMult"));
+                        PluginHelper._ispCoreTempMult = double.Parse(plugin_settings.GetValue("IspCoreTempMult"));
                         Debug.Log("[KSPI] Isp core temperature multiplier set to: " + PluginHelper.IspCoreTempMult.ToString("0.000000"));
                     }
                     if (plugin_settings.HasValue("ElectricEngineIspMult"))
@@ -835,7 +843,7 @@ namespace FNPlugin
 
                     if (plugin_settings.HasValue("GlobalThermalNozzlePowerMaxTrustMult"))
                     {
-                        PluginHelper._globalThermalNozzlePowerMaxThrustMult = float.Parse(plugin_settings.GetValue("GlobalThermalNozzlePowerMaxTrustMult"));
+                        PluginHelper._globalThermalNozzlePowerMaxThrustMult = double.Parse(plugin_settings.GetValue("GlobalThermalNozzlePowerMaxTrustMult"));
                         Debug.Log("[KSPI] Maximum Global Thermal Power Maximum Thrust Multiplier set to: " + PluginHelper.GlobalThermalNozzlePowerMaxThrustMult.ToString("0.0"));
                     }
                     if (plugin_settings.HasValue("GlobalMagneticNozzlePowerMaxTrustMult"))
@@ -851,35 +859,35 @@ namespace FNPlugin
 
                     if (plugin_settings.HasValue("MaxThermalNozzleIsp"))
                     {
-                        PluginHelper._maxThermalNozzleIsp = float.Parse(plugin_settings.GetValue("MaxThermalNozzleIsp"));
+                        PluginHelper._maxThermalNozzleIsp = double.Parse(plugin_settings.GetValue("MaxThermalNozzleIsp"));
                         Debug.Log("[KSPI] Maximum Thermal Nozzle Isp set to: " + PluginHelper.MaxThermalNozzleIsp.ToString("0.0"));
                     }
 
                     if (plugin_settings.HasValue("EngineHeatProduction"))
                     {
-                        PluginHelper._engineHeatProduction = float.Parse(plugin_settings.GetValue("EngineHeatProduction"));
+                        PluginHelper._engineHeatProduction = double.Parse(plugin_settings.GetValue("EngineHeatProduction"));
                         Debug.Log("[KSPI] EngineHeatProduction set to: " + PluginHelper.EngineHeatProduction.ToString("0.0"));
                     }
 
                     if (plugin_settings.HasValue("EngineHeatProduction"))
                     {
-                        PluginHelper._airflowHeatMult = float.Parse(plugin_settings.GetValue("AirflowHeatMult"));
+                        PluginHelper._airflowHeatMult = double.Parse(plugin_settings.GetValue("AirflowHeatMult"));
                         Debug.Log("[KSPI] AirflowHeatMultipler Isp set to: " + PluginHelper.AirflowHeatMult.ToString("0.0"));
                     }
 
                     if (plugin_settings.HasValue("TrustCoreTempThreshold"))
                     {
-                        PluginHelper._thrustCoreTempThreshold = float.Parse(plugin_settings.GetValue("TrustCoreTempThreshold"));
+                        PluginHelper._thrustCoreTempThreshold = double.Parse(plugin_settings.GetValue("TrustCoreTempThreshold"));
                         Debug.Log("[KSPI] Thrust core temperature threshold set to: " + PluginHelper.ThrustCoreTempThreshold.ToString("0.0"));
                     }
                     if (plugin_settings.HasValue("LowCoreTempBaseTrust"))
                     {
-                        PluginHelper._lowCoreTempBaseThrust = float.Parse(plugin_settings.GetValue("LowCoreTempBaseTrust"));
+                        PluginHelper._lowCoreTempBaseThrust = double.Parse(plugin_settings.GetValue("LowCoreTempBaseTrust"));
                         Debug.Log("[KSPI] Low core temperature base thrust modifier set to: " + PluginHelper.LowCoreTempBaseThrust.ToString("0.0"));
                     }
                     if (plugin_settings.HasValue("HighCoreTempTrustMult"))
                     {
-                        PluginHelper._highCoreTempThrustMult = float.Parse(plugin_settings.GetValue("HighCoreTempTrustMult"));
+                        PluginHelper._highCoreTempThrustMult = double.Parse(plugin_settings.GetValue("HighCoreTempTrustMult"));
                         Debug.Log("[KSPI] High core temperature thrust divider set to: " + PluginHelper.HighCoreTempThrustMult.ToString("0.0"));
                     }
                     if (plugin_settings.HasValue("BasePowerConsumption"))
@@ -894,22 +902,22 @@ namespace FNPlugin
                     }
                     if (plugin_settings.HasValue("IspNtrPropellantModifierBase"))
                     {
-                        PluginHelper._ispNtrPropellantModifierBase = float.Parse(plugin_settings.GetValue("IspNtrPropellantModifierBase"));
+                        PluginHelper._ispNtrPropellantModifierBase = double.Parse(plugin_settings.GetValue("IspNtrPropellantModifierBase"));
                         Debug.Log("[KSPI] Isp Ntr Propellant Modifier Base set to: " + PluginHelper.IspNtrPropellantModifierBase.ToString("0.0"));
                     }
                     if (plugin_settings.HasValue("IspElectroPropellantModifierBase"))
                     {
-                        PluginHelper._ispElectroPropellantModifierBase = float.Parse(plugin_settings.GetValue("IspNtrPropellantModifierBase"));
+                        PluginHelper._ispElectroPropellantModifierBase = double.Parse(plugin_settings.GetValue("IspNtrPropellantModifierBase"));
                         Debug.Log("[KSPI] Isp Ntr Propellant Modifier Base set to: " + PluginHelper.IspElectroPropellantModifierBase.ToString("0.0"));
                     }
                     if (plugin_settings.HasValue("ElectricEnginePowerPropellantIspMultLimiter"))
                     {
-                        PluginHelper._electricEnginePowerPropellantIspMultLimiter = float.Parse(plugin_settings.GetValue("ElectricEnginePowerPropellantIspMultLimiter"));
+                        PluginHelper._electricEnginePowerPropellantIspMultLimiter = double.Parse(plugin_settings.GetValue("ElectricEnginePowerPropellantIspMultLimiter"));
                         Debug.Log("[KSPI] Electric Engine Power Propellant IspMultiplier Limiter set to: " + PluginHelper.ElectricEnginePowerPropellantIspMultLimiter.ToString("0.0"));
                     }
                     if (plugin_settings.HasValue("ElectricEngineAtmosphericDensityTrustLimiter"))
                     {
-                        PluginHelper._electricEngineAtmosphericDensityThrustLimiter = float.Parse(plugin_settings.GetValue("ElectricEngineAtmosphericDensityTrustLimiter"));
+                        PluginHelper._electricEngineAtmosphericDensityThrustLimiter = double.Parse(plugin_settings.GetValue("ElectricEngineAtmosphericDensityTrustLimiter"));
                         Debug.Log("[KSPI] Electric Engine Power Propellant IspMultiplier Limiter set to: " + PluginHelper.ElectricEngineAtmosphericDensityThrustLimiter.ToString("0.0"));
                     }
 
@@ -925,47 +933,52 @@ namespace FNPlugin
                     }
 
                     // Jet Upgrade techs
-                    if (plugin_settings.HasValue("JetUpgradeTech0"))
-                    {
-                        PluginHelper.JetUpgradeTech0 = plugin_settings.GetValue("JetUpgradeTech0");
-                        Debug.Log("[KSPI] JetUpgradeTech0" + PluginHelper.JetUpgradeTech0);
-                    }
                     if (plugin_settings.HasValue("JetUpgradeTech1"))
                     {
                         PluginHelper.JetUpgradeTech1 = plugin_settings.GetValue("JetUpgradeTech1");
-                        Debug.Log("[KSPI] JetUpgradeTech1" + PluginHelper.JetUpgradeTech1);
+                        Debug.Log("[KSPI] JetUpgradeTech1 " + PluginHelper.JetUpgradeTech1);
                     }
-                    if (plugin_settings.HasValue("JetUpgradeTech2"))
+                    if (plugin_settings.HasValue("JetUpgradeTech1"))
                     {
                         PluginHelper.JetUpgradeTech2 = plugin_settings.GetValue("JetUpgradeTech2");
-                        Debug.Log("[KSPI] JetUpgradeTech2" + PluginHelper.JetUpgradeTech2);
+                        Debug.Log("[KSPI] JetUpgradeTech2 " + PluginHelper.JetUpgradeTech2);
                     }
                     if (plugin_settings.HasValue("JetUpgradeTech3"))
                     {
                         PluginHelper.JetUpgradeTech3 = plugin_settings.GetValue("JetUpgradeTech3");
-                        Debug.Log("[KSPI] JetUpgradeTech3" + PluginHelper.JetUpgradeTech3);
+                        Debug.Log("[KSPI] JetUpgradeTech3 " + PluginHelper.JetUpgradeTech3);
+                    }
+                    if (plugin_settings.HasValue("JetUpgradeTech4"))
+                    {
+                        PluginHelper.JetUpgradeTech4 = plugin_settings.GetValue("JetUpgradeTech4");
+                        Debug.Log("[KSPI] JetUpgradeTech4 " + PluginHelper.JetUpgradeTech4);
+                    }
+                    if (plugin_settings.HasValue("JetUpgradeTech5"))
+                    {
+                        PluginHelper.JetUpgradeTech5 = plugin_settings.GetValue("JetUpgradeTech5");
+                        Debug.Log("[KSPI] JetUpgradeTech5 " + PluginHelper.JetUpgradeTech5);
                     }
 
                     // Radiator Upgrade Tech
-                    if (plugin_settings.HasValue("RadiatorUpgradeTech0"))
-                    {
-                        PluginHelper.RadiatorUpgradeTech0 = plugin_settings.GetValue("RadiatorUpgradeTech0");
-                        Debug.Log("[KSPI] RadiatorUpgradeTech0" + PluginHelper.RadiatorUpgradeTech0);
-                    }
                     if (plugin_settings.HasValue("RadiatorUpgradeTech1"))
                     {
                         PluginHelper.RadiatorUpgradeTech1 = plugin_settings.GetValue("RadiatorUpgradeTech1");
-                        Debug.Log("[KSPI] RadiatorUpgradeTech1" + PluginHelper.RadiatorUpgradeTech1);
+                        Debug.Log("[KSPI] RadiatorUpgradeTech1 " + PluginHelper.RadiatorUpgradeTech1);
                     }
                     if (plugin_settings.HasValue("RadiatorUpgradeTech2"))
                     {
                         PluginHelper.RadiatorUpgradeTech2 = plugin_settings.GetValue("RadiatorUpgradeTech2");
-                        Debug.Log("[KSPI] RadiatorUpgradeTech2" + PluginHelper.RadiatorUpgradeTech2);
+                        Debug.Log("[KSPI] RadiatorUpgradeTech2 " + PluginHelper.RadiatorUpgradeTech2);
                     }
                     if (plugin_settings.HasValue("RadiatorUpgradeTech3"))
                     {
                         PluginHelper.RadiatorUpgradeTech3 = plugin_settings.GetValue("RadiatorUpgradeTech3");
                         Debug.Log("[KSPI] RadiatorUpgradeTech3" + PluginHelper.RadiatorUpgradeTech3);
+                    }
+                    if (plugin_settings.HasValue("RadiatorUpgradeTech4"))
+                    {
+                        PluginHelper.RadiatorUpgradeTech4 = plugin_settings.GetValue("RadiatorUpgradeTech4");
+                        Debug.Log("[KSPI] RadiatorUpgradeTech4 " + PluginHelper.RadiatorUpgradeTech4);
                     }
 
                     if (plugin_settings.HasValue("RadiatorTemperatureMk1"))

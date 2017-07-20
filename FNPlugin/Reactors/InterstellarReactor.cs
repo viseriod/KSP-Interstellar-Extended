@@ -51,7 +51,7 @@ namespace FNPlugin
         public float windowPositionY = 20;
         [KSPField(isPersistant = true)]
         public int currentGenerationType;
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false)]
         public double storedPowerMultiplier = 1;
         [KSPField(isPersistant = true)]
         public double stored_fuel_ratio = 1;
@@ -216,7 +216,7 @@ namespace FNPlugin
         [KSPField(isPersistant = false)]
         public bool containsPowerGenerator = false;
         [KSPField(isPersistant = false)]
-        public double fuelUsePerMJMult = 1f;
+        public double fuelUsePerMJMult = 1;
         [KSPField(isPersistant = false)]
         public double wasteHeatMultiplier = 1;
         [KSPField(isPersistant = false)]
@@ -241,13 +241,13 @@ namespace FNPlugin
         [KSPField(isPersistant = false)]
         public double geeForceMultiplier = 2;
         [KSPField(isPersistant = false)]
-        public double geeForceTreshHold = 1.5f;
+        public double geeForceTreshHold = 1.5;
         [KSPField(isPersistant = false)]
-        public double minGeeForceModifier = 0.01f;
+        public double minGeeForceModifier = 0.01;
         [KSPField(isPersistant = false)]
         public double neutronEmbrittlementLifepointsMax = 100;
         [KSPField(isPersistant = false)]
-        public double neutronEmbrittlementDivider = 1e+9f;
+        public double neutronEmbrittlementDivider = 1e+9;
         [KSPField(isPersistant = false)]
         public double hotBathModifier = 1;
         [KSPField(isPersistant = false)]
@@ -316,17 +316,17 @@ namespace FNPlugin
         protected double min_throttle;
 
         // Gui
-        [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = true, guiName = "Part Mass", guiUnits = " t")]
+        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = true, guiName = "Part Mass", guiUnits = " t")]
         public float partMass = 0;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Max Thermal Power", guiUnits = " MW", guiFormat = "F6")]
         public double maximumThermalPowerEffective = 0;
         [KSPField(isPersistant = false, guiActive = false, guiName = "Gee Force Mod")]
         public double geeForceModifier;
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "Power Produced", guiUnits = " MW", guiFormat = "F6")]
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Power Produced", guiUnits = " MW", guiFormat = "F6")]
         public double ongoing_total_power_generated;
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "Thermal Power Generated", guiFormat = "F6")]
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Thermal Power Generated", guiFormat = "F6")]
         protected double ongoing_thermal_power_generated;
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "Charged Power Generated", guiFormat = "F6")]
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Charged Power Generated", guiFormat = "F6")]
         protected double ongoing_charged_power_generated;
 
 
@@ -693,7 +693,7 @@ namespace FNPlugin
             {
                 return CurrentFuelMode != null
                     ? CurrentFuelMode.ChargedPowerRatio
-                    : 0f;
+                    : 0;
             }
         }
 
@@ -928,13 +928,13 @@ namespace FNPlugin
 
             // initialise power output when missing
             if (powerOutputMk2 == 0)
-                powerOutputMk2 = powerOutputMk1 * 1.5f;
+                powerOutputMk2 = powerOutputMk1 * 1.5;
             if (powerOutputMk3 == 0)
-                powerOutputMk3 = powerOutputMk2 * 1.5f;
+                powerOutputMk3 = powerOutputMk2 * 1.5;
             if (powerOutputMk4 == 0)
-                powerOutputMk4 = powerOutputMk3 * 1.5f;
+                powerOutputMk4 = powerOutputMk3 * 1.5;
             if (powerOutputMk5 == 0)
-                powerOutputMk5 = powerOutputMk4 * 1.5f;
+                powerOutputMk5 = powerOutputMk4 * 1.5;
 
             if (minimumThrottleMk1 == 0)
                 minimumThrottleMk1 = minimumThrottle;
@@ -999,7 +999,7 @@ namespace FNPlugin
             {
                 if (startDisabled)
                 {
-                    last_active_time = Planetarium.GetUniversalTime() - 4.0 * PluginHelper.SecondsInDay;
+                    last_active_time = Planetarium.GetUniversalTime() - 4d * PluginHelper.SecondsInDay;
                     IsEnabled = false;
                     startDisabled = false;
                     breedtritium = false;

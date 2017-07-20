@@ -1,8 +1,6 @@
-﻿using OpenResourceSystem;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace FNPlugin
 {
@@ -102,7 +100,7 @@ namespace FNPlugin
             fuelModeStr = CurrentFuelMode.ModeGUIName;
         }
 
-        [KSPEvent(guiName = "Manual Restart", externalToEVAOnly = true, guiActiveUnfocused = true, unfocusedRange = 3.0f)]
+        [KSPEvent(guiName = "Manual Restart", externalToEVAOnly = true, guiActiveUnfocused = true, unfocusedRange = 3.5f)]
         public void ManualRestart()
         {
             // verify any of the fuel types has at least 50% avaialbility inside the reactor
@@ -110,7 +108,7 @@ namespace FNPlugin
                 IsEnabled = true;
         }
 
-        [KSPEvent(guiName = "Manual Shutdown", externalToEVAOnly = true, guiActiveUnfocused = true, unfocusedRange = 3.0f)]
+        [KSPEvent(guiName = "Manual Shutdown", externalToEVAOnly = true, guiActiveUnfocused = true, unfocusedRange = 3.5f)]
         public void ManualShutdown()
         {
             IsEnabled = false;

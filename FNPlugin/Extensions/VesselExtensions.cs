@@ -10,6 +10,20 @@ namespace FNPlugin
 {
     public static class VesselExtensions
     {
+        public static void GetVesselAndModuleMass<T>(this Vessel vessel, out float totalmass, out float modulemass) where T : class
+        {
+            totalmass = 0;
+            modulemass = 0;
+
+            List<Part> parts = (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.parts : vessel.parts);
+            foreach (var currentPart in parts)
+            {
+                totalmass += currentPart.mass;
+                if (currentPart.FindModuleImplementing<T>() != null)
+                    modulemass += currentPart.mass;
+            }
+        }
+
         public static bool HasAnyModulesImplementing<T>(this Vessel vessel) where T: class
         {
             return vessel.FindPartModulesImplementing<T>().Any();

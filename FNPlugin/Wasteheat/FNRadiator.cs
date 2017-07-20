@@ -41,13 +41,13 @@ namespace FNPlugin
 
             // determine number of upgrade techs
             NrAvailableUpgradeTechs = 1;
+            if (PluginHelper.upgradeAvailable(PluginHelper.RadiatorUpgradeTech4))
+                NrAvailableUpgradeTechs++;
             if (PluginHelper.upgradeAvailable(PluginHelper.RadiatorUpgradeTech3))
                 NrAvailableUpgradeTechs++;
             if (PluginHelper.upgradeAvailable(PluginHelper.RadiatorUpgradeTech2))
                 NrAvailableUpgradeTechs++;
             if (PluginHelper.upgradeAvailable(PluginHelper.RadiatorUpgradeTech1))
-                NrAvailableUpgradeTechs++;
-            if (PluginHelper.upgradeAvailable(PluginHelper.RadiatorUpgradeTech0))
                 NrAvailableUpgradeTechs++;
 
             // determine fusion tech levels
@@ -137,17 +137,6 @@ namespace FNPlugin
         [KSPField(isPersistant = true)]
         public bool showControls = true;
 
-        //[KSPField(isPersistant = false)]
-        //public float radiatorTemperatureMk1 = 1850;
-        //[KSPField(isPersistant = false)]
-        //public float radiatorTemperatureMk2 = 2200;
-        //[KSPField(isPersistant = false)]
-        //public float radiatorTemperatureMk3 = 2616;
-        //[KSPField(isPersistant = false)]
-        //public float radiatorTemperatureMk4 = 3111;
-        //[KSPField(isPersistant = false)]
-        //public float radiatorTemperatureMk5 = 3700;
-
         [KSPField(isPersistant = false, guiActive = false, guiName = "Max Vacuum Temp", guiFormat = "F0", guiUnits = "K")]
         public float maxVacuumTemperature = 3700;
         [KSPField(isPersistant = false, guiActive = false, guiName = "Max Atmosphere Temp", guiFormat = "F0", guiUnits = "K")]
@@ -169,7 +158,7 @@ namespace FNPlugin
         [KSPField(isPersistant = false, guiActive = false)]
         public string surfaceAreaUpgradeTechReq = null;
         [KSPField(isPersistant = false, guiActive = false)]
-        public float surfaceAreaUpgradeMult = 1.6f;
+        public double surfaceAreaUpgradeMult = 1.6;
 
         // non persistant
         [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = false, guiName = "Mass", guiUnits = " t")]
@@ -191,7 +180,7 @@ namespace FNPlugin
         [KSPField(isPersistant = false)]
         public float emissiveColorPower = 3;
         [KSPField(isPersistant = false)]
-        public float wasteHeatMultiplier = 1;
+        public double wasteHeatMultiplier = 1;
         [KSPField(isPersistant = false)]
         public string colorHeat = "_EmissiveColor";
         [KSPField(isPersistant = false, guiActive = false)]
@@ -202,13 +191,13 @@ namespace FNPlugin
 		public string radiatorTempStr;
         [KSPField(isPersistant = false, guiActive = true, guiName = "Part Temp")]
         public string partTempStr;
-        [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = true, guiName = "Surface Area", guiFormat = "F2", guiUnits = " m2")]
+        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = true, guiName = "Surface Area", guiFormat = "F2", guiUnits = " m\xB2")]
         public double radiatorArea = 1;
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Eff Surface Area", guiFormat = "F2", guiUnits = " m2")]
+        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Eff Surface Area", guiFormat = "F2", guiUnits = " m\xB2")]
         public double effectiveRadiativeArea = 1;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false)]
-        public float areaMultiplier = 2.5f;
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Effective Area", guiFormat = "F2", guiUnits = " m2")]
+        public double areaMultiplier = 2.5;
+        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Effective Area", guiFormat = "F2", guiUnits = " m\xB2")]
         public double effectiveRadiatorArea;
 		[KSPField(isPersistant = false, guiActive = true, guiName = "Power Radiated")]
 		public string thermalPowerDissipStr;
@@ -228,9 +217,9 @@ namespace FNPlugin
         public float maxRadiatorTemperature = 3700;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Base Wasteheat")]
         public double partBaseWasteheat;
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = true, guiName = "Upgrade Techs")]
+        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Upgrade Techs")]
         public int nrAvailableUpgradeTechs;
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = true, guiName = "Has Surface Upgrade")]
+        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Has Surface Upgrade")]
         public bool hasSurfaceAreaUpgradeTechReq;
         [KSPField(isPersistant = false)]
         public float atmosphereToleranceModifier = 1;
@@ -244,10 +233,8 @@ namespace FNPlugin
 		protected double radiatedThermalPower;
 		protected double convectedThermalPower;
 		
-		protected float directionrotate = 1;
-        protected long update_count = 0;
-		protected int explode_counter = 0;
-
+        protected long update_count;
+		protected int explode_counter;
         
 
         private BaseEvent deployRadiatorEvent;
@@ -264,7 +251,7 @@ namespace FNPlugin
         private AnimationState[] heatStates;
         private ModuleDeployableRadiator _moduleDeployableRadiator;
         private ModuleActiveRadiator _moduleActiveRadiator;
-        private PartResource wasteheatPowerResource = null;
+        private PartResource wasteheatPowerResource;
         private ORSResourceManager wasteheatManager;
 
         
@@ -318,13 +305,13 @@ namespace FNPlugin
 
             // determine number of upgrade techs
             nrAvailableUpgradeTechs = 1;
+            if (PluginHelper.upgradeAvailable(PluginHelper.RadiatorUpgradeTech4))
+                nrAvailableUpgradeTechs++;
             if (PluginHelper.upgradeAvailable(PluginHelper.RadiatorUpgradeTech3))
                 nrAvailableUpgradeTechs++;
             if (PluginHelper.upgradeAvailable(PluginHelper.RadiatorUpgradeTech2))
                 nrAvailableUpgradeTechs++;
             if (PluginHelper.upgradeAvailable(PluginHelper.RadiatorUpgradeTech1))
-                nrAvailableUpgradeTechs++;
-            if (PluginHelper.upgradeAvailable(PluginHelper.RadiatorUpgradeTech0))
                 nrAvailableUpgradeTechs++;
 
             // determine fusion tech levels
@@ -406,7 +393,7 @@ namespace FNPlugin
                 if (radiator.vessel == vess) 
                 {
                     average_temp += radiator.maxRadiatorTemperature;
-                    n_radiators += 1.0f;
+                    n_radiators += 1;
                 }
             }
 
@@ -448,7 +435,7 @@ namespace FNPlugin
             deployAnim[animName].enabled = true;
             deployAnim[animName].speed = 0.5f;
             deployAnim[animName].normalizedTime = 0f;
-            deployAnim.Blend(animName, 2f);
+            deployAnim.Blend(animName, 2);
         }
 
         [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "Retract Radiator", active = true)]
@@ -480,8 +467,8 @@ namespace FNPlugin
 
             deployAnim[animName].enabled = true;
             deployAnim[animName].speed = -0.5f;
-            deployAnim[animName].normalizedTime = 1f;
-            deployAnim.Blend(animName, 2f);
+            deployAnim[animName].normalizedTime = 1;
+            deployAnim.Blend(animName, 2);
         }
 
 		[KSPAction("Deploy Radiator")]
@@ -519,7 +506,6 @@ namespace FNPlugin
             radiatedThermalPower = 0;
             convectedThermalPower = 0;
             CurrentRadiatorTemperature = 0;
-            directionrotate = 1;
             update_count = 0;
             explode_counter = 0;
 
@@ -969,19 +955,30 @@ namespace FNPlugin
         public override string GetInfo()
         {
             DetermineGenerationType();
-
             effectiveRadiatorArea = EffectiveRadiatorArea;
 
+            var stefan_area = GameConstants.stefan_const * effectiveRadiatorArea;
             var sb = new StringBuilder();
 
-            sb.Append(String.Format("Maximum Waste Heat Radiated\nMk1: {0} MW\n\n", GameConstants.stefan_const * effectiveRadiatorArea * Math.Pow(PluginHelper.RadiatorTemperatureMk1, 4) / 1e6f));
+            sb.Append(String.Format("Base surface area: {0:F2} m\xB2 \n", radiatorArea));
+            sb.Append(String.Format("Surface area / Mass : {0:F2}\n", radiatorArea / part.mass));
 
-            sb.Append(String.Format("Mk2: {0} MW\n", GameConstants.stefan_const * effectiveRadiatorArea * Math.Pow(PluginHelper.RadiatorTemperatureMk2, 4) / 1e6f));
-            sb.Append(String.Format("Mk3: {0} MW\n", GameConstants.stefan_const * effectiveRadiatorArea * Math.Pow(PluginHelper.RadiatorTemperatureMk3, 4) / 1e6f));
+            sb.Append(String.Format("Surface Area Bonus: {0:P0}\n", String.IsNullOrEmpty(surfaceAreaUpgradeTechReq) ? 0 : surfaceAreaUpgradeMult - 1 ));
+            sb.Append(String.Format("Atm Convection Bonus: {0:P0}\n", convectiveBonus - 1));
+
+            sb.Append(String.Format("\nMaximum Waste Heat Radiated\nMk1: {0:F0} K {1:F3} MW\n", PluginHelper.RadiatorTemperatureMk1, stefan_area * Math.Pow(PluginHelper.RadiatorTemperatureMk1, 4) / 1e6));
+
+            sb.Append(String.Format("Mk2: {0:F0} K {1:F3} MW\n", PluginHelper.RadiatorTemperatureMk2, stefan_area * Math.Pow(PluginHelper.RadiatorTemperatureMk2, 4) / 1e6));
+            sb.Append(String.Format("Mk3: {0:F0} K {1:F3} MW\n", PluginHelper.RadiatorTemperatureMk3, stefan_area * Math.Pow(PluginHelper.RadiatorTemperatureMk3, 4) / 1e6));
             if (!String.IsNullOrEmpty(surfaceAreaUpgradeTechReq))
             {
-                sb.Append(String.Format("Mk4: {0} MW\n", GameConstants.stefan_const * effectiveRadiatorArea * Math.Pow(PluginHelper.RadiatorTemperatureMk4, 4) / 1e6f));
-                sb.Append(String.Format("Mk5: {0} MW\n", GameConstants.stefan_const * effectiveRadiatorArea * Math.Pow(PluginHelper.RadiatorTemperatureMk5, 4) / 1e6f));
+                sb.Append(String.Format("Mk4: {0:F0} K {1:F3} MW\n", PluginHelper.RadiatorTemperatureMk4, stefan_area * Math.Pow(PluginHelper.RadiatorTemperatureMk4, 4) / 1e6));
+                sb.Append(String.Format("Mk5: {0:F0} K {1:F3} MW\n", PluginHelper.RadiatorTemperatureMk5, stefan_area * Math.Pow(PluginHelper.RadiatorTemperatureMk5, 4) / 1e6));
+
+                var convection = 900 * effectiveRadiatorArea * rad_const_h / 1e6 * convectiveBonus;
+                var disapation = stefan_area * Math.Pow(900, 4) / 1e6;
+
+                sb.Append(String.Format("\nMaximum @ 1 atmosphere : 1200 K, dissipation: {0:F3} MW\n, convection: {1:F3} MW\n", disapation, convection));
             }
 
             return sb.ToString();

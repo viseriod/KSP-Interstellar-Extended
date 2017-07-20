@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 using TweakScale;
 using FNPlugin.Extensions;
@@ -39,6 +38,7 @@ namespace FNPlugin
         public bool isupgraded = false;
         [KSPField(isPersistant = true)]
         public bool chargedParticleMode = false;
+
         [KSPField(isPersistant = true, guiActive = true, guiName = "Power Control"), UI_FloatRange(stepIncrement = 1f, maxValue = 100f, minValue = 0f)]
         public float powerPercentage = 100;
 
@@ -62,14 +62,14 @@ namespace FNPlugin
         public string originalName;
 
         [KSPField(isPersistant = false)]
-        public double pCarnotEff = 0.32f;
+        public double pCarnotEff = 0.32;
         [KSPField(isPersistant = false)]
-        public double upgradedpCarnotEff = 0.64f;
+        public double upgradedpCarnotEff = 0.64;
 
         [KSPField(isPersistant = false)]
-        public double directConversionEff = 0.6f;
+        public double directConversionEff = 0.6;
         [KSPField(isPersistant = false)]
-        public double upgradedDirectConversionEff = 0.865f;
+        public double upgradedDirectConversionEff = 0.865;
 
         [KSPField(isPersistant = false)]
         public double efficiencyMk1 = 0;
@@ -77,11 +77,15 @@ namespace FNPlugin
         public double efficiencyMk2 = 0;
         [KSPField(isPersistant = false)]
         public double efficiencyMk3 = 0;
+        [KSPField(isPersistant = false)]
+        public double efficiencyMk4 = 0;
 
         [KSPField(isPersistant = false)]
         public string Mk2TechReq = "";
         [KSPField(isPersistant = false)]
         public string Mk3TechReq = "";
+        [KSPField(isPersistant = false)]
+        public string Mk4TechReq = "";
 
         [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = true, guiName = "Max Efficiency")]
         public double maxEfficiency = 0;
@@ -121,7 +125,7 @@ namespace FNPlugin
         // Debugging
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Stored Mass")]
         public float storedMassMultiplier;
-        [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "Part Mass", guiUnits = " t", guiFormat = "F3")]
+        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = true, guiName = "Part Mass", guiUnits = " t", guiFormat = "F3")]
         public float partMass;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Target Mass", guiUnits = " t")]
         public double targetMass;
@@ -155,7 +159,7 @@ namespace FNPlugin
         public string generatorType;
         [KSPField(isPersistant = false, guiActive = true, guiName = "Current Power")]
         public string OutputPower;
-        [KSPField(isPersistant = false, guiActive = true, guiName = "Max Power")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Max Power")]
         public string MaxPowerStr;
         [KSPField(isPersistant = false, guiActive = true, guiName = "Efficiency")]
         public string OverallEfficiency;
@@ -165,11 +169,11 @@ namespace FNPlugin
         public double requiredMegawattCapacity;
         [KSPField(isPersistant = false, guiActive = false, guiName = "Heat Exchange Divisor")]
         public double heat_exchanger_thrust_divisor;
-        [KSPField(isPersistant = false, guiActive = true, guiName = "Requested Power", guiUnits = " MJ", guiFormat = "F3")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Requested Power", guiUnits = " MJ", guiFormat = "F3")]
         public double requested_power_per_second;
-        [KSPField(isPersistant = false, guiActive = true, guiName = "Cold Bath Temp", guiUnits = "K", guiFormat = "F3")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Cold Bath Temp", guiUnits = "K", guiFormat = "F3")]
         public double coldBathTemp = 500;
-        [KSPField(isPersistant = false, guiActive = true, guiName = "Hot Bath Temp", guiUnits = "K", guiFormat = "F3")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Hot Bath Temp", guiUnits = "K", guiFormat = "F3")]
         public double hotBathTemp = 300;
         [KSPField(isPersistant = false, guiActive = false, guiName = "Spare Fill Cap", guiUnits = " MW", guiFormat = "F3")]
         public double possibleSpareResourceCapacityFilling;
@@ -292,8 +296,6 @@ namespace FNPlugin
         public void upgradePartModule()
         {
             isupgraded = true;
-            //pCarnotEff = upgradedpCarnotEff;
-            //directConversionEff = this.upgradedDirectConversionEff;
             generatorType = chargedParticleMode ? altUpgradedName : upgradedName;
         }
 
@@ -425,13 +427,13 @@ namespace FNPlugin
                 anim[animName].layer = 1;
                 if (!IsEnabled)
                 {
-                    anim[animName].normalizedTime = 1f;
-                    anim[animName].speed = -1f;
+                    anim[animName].normalizedTime = 1;
+                    anim[animName].speed = -1;
                 }
                 else
                 {
-                    anim[animName].normalizedTime = 0f;
-                    anim[animName].speed = 1f;
+                    anim[animName].normalizedTime = 0;
+                    anim[animName].speed = 1;
                 }
                 anim.Play();
             }
@@ -463,11 +465,15 @@ namespace FNPlugin
 
             if (efficiencyMk3 == 0)
                 efficiencyMk3 = efficiencyMk2;
+            if (efficiencyMk4 == 0)
+                efficiencyMk4 = efficiencyMk3;
 
             if (String.IsNullOrEmpty(Mk2TechReq))
                 Mk2TechReq = upgradeTechReq;
 
-            if (PluginHelper.upgradeAvailable(Mk3TechReq))
+            if (PluginHelper.upgradeAvailable(Mk4TechReq))
+                maxEfficiency = efficiencyMk4;
+            else if (PluginHelper.upgradeAvailable(Mk3TechReq))
                 maxEfficiency = efficiencyMk3;
             else if (PluginHelper.upgradeAvailable(Mk2TechReq))
                 maxEfficiency = efficiencyMk2;
@@ -639,9 +645,9 @@ namespace FNPlugin
                 {
                     play_down = true;
                     play_up = false;
-                    anim[animName].speed = 1f;
-                    anim[animName].normalizedTime = 0f;
-                    anim.Blend(animName, 2f);
+                    anim[animName].speed = 1;
+                    anim[animName].normalizedTime = 0;
+                    anim.Blend(animName, 2);
                 }
             }
             else
@@ -650,9 +656,9 @@ namespace FNPlugin
                 {
                     play_down = false;
                     play_up = true;
-                    anim[animName].speed = -1f;
-                    anim[animName].normalizedTime = 1f;
-                    anim.Blend(animName, 2f);
+                    anim[animName].speed = -1;
+                    anim[animName].normalizedTime = 1;
+                    anim.Blend(animName, 2);
                 }
             }
 
@@ -870,7 +876,7 @@ namespace FNPlugin
                     if (!CheatOptions.IgnoreMaxTemperature)
                         consumeFNResourcePerSecond(effective_input_power_per_second, FNResourceManager.FNRESOURCE_WASTEHEAT);
 
-                    electricdtps = Math.Max(effective_input_power_per_second * powerOutputMultiplier, 0.0);
+                    electricdtps = Math.Max(effective_input_power_per_second * powerOutputMultiplier, 0);
 
                     var effectiveMaxThermalPower = attachedPowerSource.EfficencyConnectedChargedEnergyGenerator == 0
                         ? maxThermalPower + maxChargedPower * availableChargedPowerRatio
@@ -899,7 +905,7 @@ namespace FNPlugin
                     if (!CheatOptions.IgnoreMaxTemperature)
                         consumeFNResourcePerSecond(effective_input_power_per_second, FNResourceManager.FNRESOURCE_WASTEHEAT);
 
-                    electricdtps = Math.Max(effective_input_power_per_second * powerOutputMultiplier, 0.0);
+                    electricdtps = Math.Max(effective_input_power_per_second * powerOutputMultiplier, 0);
                     max_electricdtps = maxChargedPower * _totalEff;
                 }
                 outputPower = -supplyFNResourcePerSecondWithMax(electricdtps, max_electricdtps, FNResourceManager.FNRESOURCE_MEGAJOULES);
