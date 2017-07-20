@@ -7,13 +7,13 @@ namespace FNPlugin
 
     public interface IThermalReciever
     {
-        void AttachThermalReciever(Guid key, float radius);
+        void AttachThermalReciever(Guid key, double radius);
 
         void DetachThermalReciever(Guid key);
 
-        float GetFractionThermalReciever(Guid key);
+        double GetFractionThermalReciever(Guid key);
 
-        float ThermalTransportationEfficiency { get; }
+        double ThermalTransportationEfficiency { get; }
     }
 
 
@@ -37,7 +37,7 @@ namespace FNPlugin
         /// <summary>
         /// Influences the Mass in Electric Generator
         /// </summary>
-        float ThermalProcessingModifier { get; }
+        double ThermalProcessingModifier { get; }
 
         int SupportedPropellantAtoms { get; }
 
@@ -79,7 +79,7 @@ namespace FNPlugin
 
         bool IsVolatileSource { get; }
 
-        float GetRadius();
+        double GetRadius();
 
         bool IsNuclear { get; }
 
@@ -93,31 +93,35 @@ namespace FNPlugin
 
         bool IsThermalSource { get; }
 
-        float ThermalPropulsionEfficiency { get; }
+        double ThermalPropulsionEfficiency { get; }
 
-        float ThermalEnergyEfficiency { get; }
+        double ThermalEnergyEfficiency { get; }
 
-        float ChargedParticleEnergyEfficiency { get; }
+        double ChargedParticleEnergyEfficiency { get; }
 
-        float ChargedParticlePropulsionEfficiency { get; }
+        double ChargedParticlePropulsionEfficiency { get; }
 
         double EfficencyConnectedThermalEnergyGenerator { get; }
 
         double EfficencyConnectedChargedEnergyGenerator { get; }
 
+        double ReactorSpeedMult { get; }
+
         IElectricPowerGeneratorSource ConnectedThermalElectricGenerator { get; set; }
 
         IElectricPowerGeneratorSource ConnectedChargedParticleElectricGenerator { get; set; }
 
-        void NotifyActiveThermalEnergyGenerator(double efficency, ElectricGeneratorType generatorType);
+        void NotifyActiveThermalEnergyGenerator(double efficency, double power_ratio, ElectricGeneratorType generatorType);
 
-        void NotifyActiveChargedEnergyGenerator(double efficency, ElectricGeneratorType generatorType);
+        void NotifyActiveChargedEnergyGenerator(double efficency, double power_ratio, ElectricGeneratorType generatorType);
 
         bool ShouldApplyBalance(ElectricGeneratorType generatorType);
 
         void ConnectWithEngine(IEngineNoozle engine);
 
         void DisconnectWithEngine(IEngineNoozle engine);
+
+        
 	}
 }
 

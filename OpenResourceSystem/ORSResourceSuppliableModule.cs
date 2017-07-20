@@ -13,6 +13,7 @@ namespace OpenResourceSystem
 
         protected Dictionary<String, double> fnresource_supplied = new Dictionary<String, double>();
         protected String[] resources_to_supply;
+        protected double timeWarpFixedDeltaTime;
 
         public void receiveFNResource(double power, String resourcename)
         {
@@ -26,7 +27,7 @@ namespace OpenResourceSystem
         {
             power_fixed = Math.Max(power_fixed, 0);
 
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -41,11 +42,12 @@ namespace OpenResourceSystem
             return power_taken_fixed;
         }
 
-        public double consumeFNResourcePerSecond(double power_per_second, String resourcename)
+        public double consumeFNResourcePerSecond(double power_per_second, String resourcename, ORSResourceManager manager = null)
         {
             power_per_second = Math.Max(power_per_second, 0);
 
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            if (manager == null)
+                manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -62,7 +64,7 @@ namespace OpenResourceSystem
 
         public double supplyFNResourceFixed(double supply, String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -71,7 +73,7 @@ namespace OpenResourceSystem
 
         public double supplyFNResourcePerSecond(double supply, String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -80,7 +82,7 @@ namespace OpenResourceSystem
 
         public double supplyFNResourceFixedWithMax(double supply, double maxsupply, String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -89,52 +91,55 @@ namespace OpenResourceSystem
 
         public double supplyFNResourcePerSecondWithMax(double supply, double maxsupply, String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
             return manager.powerSupplyPerSecondWithMax(this, Math.Max(supply, 0), Math.Max(maxsupply, 0));
         }
 
-        public double supplyManagedFNResourceFixed(double supply, String resourcename)
-        {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
-            if (manager == null)
-                return 0;
-
-            return manager.managedPowerSupplyFixed(this, Math.Max(supply, 0));
-        }
-
         public double supplyManagedFNResourcePerSecond(double supply, String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
             return manager.managedPowerSupplyPerSecond(this, Math.Max(supply, 0));
         }
 
-        public double supplyManagedFNResourceFixedWithMinimumRatio(double supply, double ratio_min, String resourcename)
+        public double getNeededPowerSupplyPerSecondWithMinimumRatio(double supply, double ratio_min, String resourcename, ORSResourceManager manager = null)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            if (manager == null)
+                manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
-            return manager.managedPowerSupplyFixedWithMinimumRatio(this, Math.Max(supply, 0), Math.Max(ratio_min, 0));
+            return manager.getNeededPowerSupplyPerSecondWithMinimumRatio(Math.Max(supply, 0), Math.Max(ratio_min, 0));
         }
 
-        public double supplyManagedFNResourcePerSecondWithMinimumRatio(double supply, double ratio_min, String resourcename)
+        public double supplyManagedFNResourcePerSecondWithMinimumRatio(double supply, double ratio_min, String resourcename, ORSResourceManager manager = null)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            if (manager == null)
+                manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
             
             return manager.managedPowerSupplyPerSecondWithMinimumRatio(this, Math.Max(supply, 0), Math.Max(ratio_min, 0));
         }
 
+        public double managedRequestedPowerSupplyPerSecondMinimumRatio(double requested_power, double maximum_power, double ratio_min, String resourcename, ORSResourceManager manager = null)
+        {
+            if (manager == null)
+                manager = getManagerForVessel(resourcename);
+            if (manager == null)
+                return 0;
+
+            return manager.managedRequestedPowerSupplyPerSecondMinimumRatio(this, requested_power, Math.Max(maximum_power, 0), Math.Max(ratio_min, 0));
+        }
+
         public double getCurrentResourceDemand(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -143,7 +148,7 @@ namespace OpenResourceSystem
 
         public double getStableResourceSupply(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -152,7 +157,7 @@ namespace OpenResourceSystem
 
         public double getCurrentHighPriorityResourceDemand(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -161,7 +166,7 @@ namespace OpenResourceSystem
 
         public double getResourceSupply(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -170,7 +175,7 @@ namespace OpenResourceSystem
 
         public double GetOverproduction(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -179,7 +184,7 @@ namespace OpenResourceSystem
 
         public double getDemandStableSupply(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -188,7 +193,7 @@ namespace OpenResourceSystem
 
         public double getResourceDemand(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -197,7 +202,7 @@ namespace OpenResourceSystem
 
         public double GetRequiredResourceDemand(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -206,7 +211,7 @@ namespace OpenResourceSystem
 
         public double GetCurrentUnfilledResourceDemand(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -215,7 +220,7 @@ namespace OpenResourceSystem
 
         public double GetPowerSupply(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -224,7 +229,7 @@ namespace OpenResourceSystem
 
         public double GetCurrentResourceDemand(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -233,7 +238,7 @@ namespace OpenResourceSystem
 
         public double getResourceBarRatio(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -242,7 +247,7 @@ namespace OpenResourceSystem
 
         public double getSpareResourceCapacity(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -251,17 +256,16 @@ namespace OpenResourceSystem
 
         public double getResourceAvailability(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
             return manager.getResourceAvailability();
         }
 
-
         public double getTotalResourceCapacity(String resourcename)
         {
-            ORSResourceManager manager = getManagerForVessel(resourcename, vessel);
+            ORSResourceManager manager = getManagerForVessel(resourcename);
             if (manager == null)
                 return 0;
 
@@ -287,8 +291,15 @@ namespace OpenResourceSystem
             getSupplyPriorityManager(this.vessel).Register(this);
         }
 
+        protected double TimeWarpFixedDeltaTime
+        {
+            get { return (double)(decimal)TimeWarp.fixedDeltaTime; }
+        }
+
         public override void OnFixedUpdate()
         {
+            timeWarpFixedDeltaTime = TimeWarpFixedDeltaTime;
+
             try
             {
                 updateCounter++;
@@ -360,6 +371,11 @@ namespace OpenResourceSystem
         protected virtual ORSResourceOvermanager getOvermanagerForResource(string resourcename)
         {
             return ORSResourceOvermanager.getResourceOvermanagerForResource(resourcename);
+        }
+
+        protected virtual ORSResourceManager getManagerForVessel(string resourcename)
+        {
+            return getManagerForVessel(resourcename, vessel);
         }
 
         protected virtual ORSResourceManager getManagerForVessel(string resourcename, Vessel vessel)

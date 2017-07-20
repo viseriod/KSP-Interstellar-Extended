@@ -28,6 +28,15 @@ namespace FNPlugin
         public double animationStarted = 0;
 
         [KSPField(isPersistant = false)]
+        public float jetengineAccelerationBaseSpeed = 0.2f;
+        [KSPField(isPersistant = false)]
+        public float jetengineDecelerationBaseSpeed = 0.4f;
+        [KSPField(isPersistant = false)]
+        public float engineAccelerationBaseSpeed = 2f;
+        [KSPField(isPersistant = false)]
+        public float engineDecelerationBaseSpeed = 10f;
+
+        [KSPField(isPersistant = false)]
         public float partMass = 1;
         [KSPField(isPersistant = false)]
         public bool initialized = false;
@@ -86,7 +95,7 @@ namespace FNPlugin
         [KSPField(isPersistant = false)]
         public float recoveryAnimationDivider = 1;
         [KSPField(isPersistant = false)]
-        public float wasteheatEfficiencyLowTemperature = 1;
+        public float wasteheatEfficiencyLowTemperature = 0.99f;
         [KSPField(isPersistant = false)]
         public float wasteheatEfficiencyHighTemperature = 0.9f;
         [KSPField(isPersistant = false)]
@@ -113,7 +122,7 @@ namespace FNPlugin
         public double baseMaxIsp;
 
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = true, guiName = "Radius", guiUnits = " m")]
-        public float radius;
+        public double radius;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = true, guiName = "Exit Area", guiUnits = " m2")]
         public float exitArea = 1;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Afterburner upgrade tech")]
@@ -180,7 +189,7 @@ namespace FNPlugin
         protected double _maxISP;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = true, guiName = "MinISP")]
         protected double _minISP;
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Max Calculated Thrust", guiFormat = "F3")]
+        [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "Max Calculated Thrust", guiFormat = "F3")]
         protected double calculatedMaxThrust;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Max Fuel Flow")]
         protected double max_fuel_flow_rate = 0;
@@ -217,8 +226,8 @@ namespace FNPlugin
         protected double availableThermalPower;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Available C Power ", guiUnits = " MJ")]
         protected double availableChargedPower;
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Delayed Throttle")]
-        protected float delayedThrottle = 0;
+        //[KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Delayed Throttle")]
+        //protected float delayedThrottle = 0;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Air Flow Heat Modifier", guiFormat = "F3")]
         double airflowHeatModifier;
 
@@ -230,6 +239,11 @@ namespace FNPlugin
         int total_intakes;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiFormat = "F3")]
         double proportion;
+
+        [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "Jet Acceleration")]
+        float effectiveJetengineAccelerationSpeed;
+        [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "Jet Deceleration")]
+        float effectiveJetengineDecelerationSpeed;
         
         [KSPField]
         public int supportedPropellantAtoms = 511;
@@ -273,10 +287,6 @@ namespace FNPlugin
         protected float jetTechBonus;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false)]
         protected float jetTechBonusPercentage;
-
-        //public bool Static_updating { get { return static_updating; } set { static_updating = value; } }
-        //public bool Static_updating2 { get { return static_updating2; } set { static_updating2 = value; } }
-        public int Fuel_mode { get { return fuel_mode; } }
 
         private IPowerSource _myAttachedReactor;
         public IPowerSource AttachedReactor
@@ -356,11 +366,13 @@ namespace FNPlugin
             get
             {
                 if (myAttachedEngine != null && myAttachedEngine.isOperational)
-                    return myAttachedEngine.currentThrottle * AttachedReactor.ThermalPropulsionEfficiency;
+                    return myAttachedEngine.currentThrottle;
                 else
                     return 0;
             }
         }
+
+        public bool RequiresChargedPower { get { return false; } }
 
         public void upgradePartModule()
         {
@@ -495,6 +507,8 @@ namespace FNPlugin
 
                 jetTechBonus = Convert.ToInt32(hasJetUpgradeTech0) + 1.2f * Convert.ToInt32(hasJetUpgradeTech1) + 1.44f * Convert.ToInt32(hasJetUpgradeTech2) + 1.728f * Convert.ToInt32(hasJetUpgradeTech3);
                 jetTechBonusPercentage = jetTechBonus / 26.84f;
+                effectiveJetengineAccelerationSpeed = jetengineAccelerationBaseSpeed * (float)AttachedReactor.ReactorSpeedMult * jetTechBonus / 5.368f * 5;
+                effectiveJetengineDecelerationSpeed = jetengineDecelerationBaseSpeed * (float)AttachedReactor.ReactorSpeedMult * jetTechBonus / 5.368f * 5;
 
                 hasstarted = true;
 
@@ -849,7 +863,9 @@ namespace FNPlugin
 
                 myAttachedEngine.useAtmCurve = false;
                 myAttachedEngine.useVelCurve = false;
-                myAttachedEngine.useEngineResponseTime = false;
+                myAttachedEngine.engineAccelerationSpeed = engineAccelerationBaseSpeed * (float)AttachedReactor.ReactorSpeedMult;
+                myAttachedEngine.engineDecelerationSpeed = engineDecelerationBaseSpeed * (float)AttachedReactor.ReactorSpeedMult;
+                myAttachedEngine.useEngineResponseTime = true;
             }
             else
             {
@@ -865,7 +881,7 @@ namespace FNPlugin
                     velCurve.Add(0, 0.05f + jetTechBonusPercentage / 2);
                     velCurve.Add(2.5f - curveChange, 1f);
                     velCurve.Add(5f + curveChange, 1f);
-                    velCurve.Add(25f, 0 + jetTechBonusPercentage);
+                    velCurve.Add(50f, 0 + jetTechBonusPercentage);
                 }
                 else if (jetPerformanceProfile == 1)
                 {
@@ -896,6 +912,8 @@ namespace FNPlugin
                 myAttachedEngine.ignitionThreshold = 0.01f;
                 myAttachedEngine.useVelCurve = true;
                 myAttachedEngine.velCurve = velCurve;
+                myAttachedEngine.engineAccelerationSpeed = effectiveJetengineAccelerationSpeed;
+                myAttachedEngine.engineDecelerationSpeed = effectiveJetengineDecelerationSpeed;
                 myAttachedEngine.useEngineResponseTime = true;
             }
 
@@ -989,15 +1007,11 @@ namespace FNPlugin
 
                 ConfigEffects();
 
-                delayedThrottle = _currentpropellant_is_jet || myAttachedEngine.currentThrottle < delayedThrottle || delayedThrottleFactor <= 0
-                    ? myAttachedEngine.currentThrottle
-                    : Mathf.MoveTowards(delayedThrottle, myAttachedEngine.currentThrottle, delayedThrottleFactor * TimeWarp.fixedDeltaTime);
-
                 var effectiveThermalPower = getResourceSupply(FNResourceManager.FNRESOURCE_THERMALPOWER);
                 var effectiveChargedPower = getResourceSupply(FNResourceManager.FNRESOURCE_CHARGED_PARTICLES);
 
-                currentMaxThermalPower = Math.Min(effectiveThermalPower, AttachedReactor.MaximumThermalPower * AttachedReactor.ThermalPropulsionEfficiency * delayedThrottle);
-                currentMaxChargedPower = Math.Min(effectiveChargedPower, AttachedReactor.MaximumChargedPower * AttachedReactor.ThermalPropulsionEfficiency * delayedThrottle);
+                currentMaxThermalPower = Math.Min(effectiveThermalPower, AttachedReactor.MaximumThermalPower * AttachedReactor.ThermalPropulsionEfficiency * myAttachedEngine.currentThrottle);
+                currentMaxChargedPower = Math.Min(effectiveChargedPower, AttachedReactor.MaximumChargedPower * AttachedReactor.ThermalPropulsionEfficiency * myAttachedEngine.currentThrottle);
 
                 thermalRatio = getResourceBarRatio(FNResourceManager.FNRESOURCE_THERMALPOWER);
                 chargedParticleRatio = getResourceBarRatio(FNResourceManager.FNRESOURCE_CHARGED_PARTICLES);
@@ -1013,7 +1027,7 @@ namespace FNPlugin
                 {
                     UpdateMaxIsp();
 
-                    expectedMaxThrust = AttachedReactor.MaximumPower * GetPowerThrustModifier() * GetHeatThrustModifier() / PluginHelper.GravityConstant / _maxISP * GetHeatExchangerThrustDivisor();
+                    expectedMaxThrust = AttachedReactor.MaximumPower * AttachedReactor.ThermalPropulsionEfficiency * GetPowerThrustModifier() * GetHeatThrustModifier() / PluginHelper.GravityConstant / _maxISP * GetHeatExchangerThrustDivisor();
                     calculatedMaxThrust = expectedMaxThrust;
 
                     var sootMult = CheatOptions.UnbreakableJoints ? 1 : 1f - sootAccumulationPercentage / 200f;
@@ -1308,7 +1322,7 @@ namespace FNPlugin
 
                 if (pulseDuration == 0 && myAttachedEngine is ModuleEnginesFX && !String.IsNullOrEmpty(_particleFXName))
                 {
-                    part.Effect(_particleFXName, (float)Math.Max(0.1f * myAttachedEngine.currentThrottle, Math.Min(Math.Pow(power_received / requested_thermal_power, 0.5), delayedThrottle)), -1);
+                    part.Effect(_particleFXName, (float)Math.Max(0.1f * myAttachedEngine.currentThrottle, Math.Min(Math.Pow(power_received / requested_thermal_power, 0.5), myAttachedEngine.currentThrottle)), -1);
                 }
             }
             catch (Exception e)
@@ -1493,7 +1507,7 @@ namespace FNPlugin
         }
 
 
-        private float storedFractionThermalReciever;
+        private double storedFractionThermalReciever;
         private double GetHeatExchangerThrustDivisor()
         {
             if (AttachedReactor == null || AttachedReactor.GetRadius() == 0 || radius == 0) return 0;
