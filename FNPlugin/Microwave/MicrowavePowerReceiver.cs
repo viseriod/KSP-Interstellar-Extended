@@ -20,6 +20,7 @@ namespace FNPlugin
 
     class MicrowavePowerReceiverDish: MicrowavePowerReceiver  {} // tweakscales with exponent 2.25
 
+    [KSPModule("Beamed Power Receiver")]
     class MicrowavePowerReceiver : FNResourceSuppliableModule, IPowerSource, IElectricPowerGeneratorSource // tweakscales with exponent 2.5
     {
         //Persistent True
@@ -109,9 +110,9 @@ namespace FNPlugin
         public bool isEnergyReceiver = true;
         [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = false, guiName = "Is Slave")]
         public bool isThermalReceiverSlave = false;
-        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Input Power", guiFormat = "F3", guiUnits = " MJ")]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Input Power", guiFormat = "F3", guiUnits = " MJ")]
         public double powerInputMegajoules = 0;
-        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Max Input Power", guiFormat = "F3", guiUnits = " MJ")]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Max Input Power", guiFormat = "F3", guiUnits = " MJ")]
         public double powerInputMegajoulesMax = 0;
         [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Effective Thermal Power", guiFormat = "F3", guiUnits = " MJ")]
         public double ThermalPower;
@@ -151,12 +152,19 @@ namespace FNPlugin
         public double chargedParticleEnergyEfficiency = 1;
         [KSPField(isPersistant = false)]
         public double thermalProcessingModifier = 1;
-        [KSPField(isPersistant = false)]
+        [KSPField(isPersistant = false, guiActiveEditor = false)]
         public bool canSwitchBandwidthInEditor = false;
-        [KSPField(isPersistant = false)]
+        [KSPField(isPersistant = false, guiActiveEditor = false)]
         public bool canSwitchBandwidthInFlight = false;
         [KSPField(isPersistant = false)]
         public string bandWidthName;
+
+        [KSPField(isPersistant = false)]
+        public int connectStackdepth = 4;
+        [KSPField(isPersistant = false)]
+        public int connectParentdepth = 2;
+        [KSPField(isPersistant = false)]
+        public int connectSurfacedepth = 2;
 
         //GUI
         [KSPField(isPersistant = true, guiActive = true, guiName = "Reception"), UI_FloatRange(stepIncrement = 0.005f, maxValue = 100, minValue = 1)]
@@ -212,17 +220,25 @@ namespace FNPlugin
         [KSPField(isPersistant = false, guiActive = false, guiName = "Buffer Power", guiFormat = "F4", guiUnits = " MW")]
         public double partBaseMegajoules;
 
+        [KSPField(isPersistant = false, guiActive = true, guiName = "FlowRate", guiFormat = "F4")]
+        public double flowRate;
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = false)]
+        public double kerbalismPowerOutput;
+
         [KSPField(isPersistant = false)]
         public double powerMult = 1;
         [KSPField(isPersistant = false)]
         public double powerHeatMultiplier = 1;
 
+        protected double previousDeltaTime;
+        protected double previousInputMegajoules = 0;
         protected double total_beamed_power = 0;
         protected double total_beamed_power_max = 0;
         protected double total_beamed_wasteheat = 0;
 
         protected BaseField _radiusField;
         protected BaseField _coreTempereratureField;
+        protected BaseField _field_kerbalism_output;
 
         protected BaseEvent _linkReceiverBaseEvent;
         protected BaseEvent _unlinkReceiverBaseEvent;
@@ -235,7 +251,8 @@ namespace FNPlugin
 
         protected ModuleActiveRadiator activeRadiator;
         protected FNRadiator fnRadiator;
-
+        protected PartModule warpfixer;
+        
         public Queue<double> solarFluxQueue = new Queue<double>(50);
         public Queue<double> flowRateQueue = new Queue<double>(50);
 
@@ -407,6 +424,7 @@ namespace FNPlugin
 
         protected PartResource wasteheatResource;
         protected PartResource megajouleResource;
+        protected PartResource electricResource;
         protected PartResource thermalResource;
 
         protected Animation animation;
@@ -703,6 +721,12 @@ namespace FNPlugin
             coreTempererature = CoreTemperature.ToString("0.0") + " K";
             _coreTempereratureField = Fields["coreTempererature"];
 
+            if (part.Modules.Contains("WarpFixer"))
+            {
+                warpfixer = part.Modules["WarpFixer"];
+                _field_kerbalism_output = warpfixer.Fields["field_output"];
+            }
+
             if (IsThermalSource && !isThermalReceiverSlave)
             {
                 _radiusField.guiActive = true;
@@ -746,8 +770,6 @@ namespace FNPlugin
                 }
             }
 
-            Debug.Log("[KSPI] - 8 ");
-
             deployableSolarPanel = part.FindModuleImplementing<ModuleDeployableSolarPanel>();
             if (deployableSolarPanel != null)
             {
@@ -780,7 +802,7 @@ namespace FNPlugin
 
             if (isThermalReceiverSlave)
             {
-                var result = PowerSourceSearchResult.BreadthFirstSearchForThermalSource(this.part, (s) => s is MicrowavePowerReceiver && (MicrowavePowerReceiver)s != this , 2, 2, 2, true);
+                var result = PowerSourceSearchResult.BreadthFirstSearchForThermalSource(this.part, (s) => s is MicrowavePowerReceiver && (MicrowavePowerReceiver)s != this, connectStackdepth, connectParentdepth, connectSurfacedepth, true);
 
                 if (result == null || result.Source == null)
                     UnityEngine.Debug.LogWarning("[KSPI] - MicrowavePowerReceiver - BreadthFirstSearchForThermalSource-Failed to find thermal receiver");
@@ -804,35 +826,16 @@ namespace FNPlugin
             wasteheatResource = part.Resources[FNResourceManager.FNRESOURCE_WASTEHEAT];
             megajouleResource = part.Resources[FNResourceManager.FNRESOURCE_MEGAJOULES];
             thermalResource = part.Resources[FNResourceManager.FNRESOURCE_THERMALPOWER];
+            electricResource = part.Resources[FNResourceManager.STOCK_RESOURCE_ELECTRICCHARGE];
 
 			// calculate WasteHeat Capacity
-			partBaseWasteheat = part.mass * 2.0e+4 * wasteHeatMultiplier;
-			var wasteheatPowerResource = part.Resources.FirstOrDefault(r => r.resourceName == FNResourceManager.FNRESOURCE_WASTEHEAT);
-			if (wasteheatPowerResource != null)
-			{
-				var wasteheat_ratio = Math.Min(wasteheatPowerResource.amount / wasteheatPowerResource.maxAmount, 0.95);
-				wasteheatPowerResource.maxAmount = partBaseWasteheat;
-				wasteheatPowerResource.amount = wasteheatPowerResource.maxAmount * wasteheat_ratio;
-			}
+			partBaseWasteheat = part.mass * 2.0e+5 * wasteHeatMultiplier;
 
             // calculate Power Capacity buffer
             partBaseMegajoules = StableMaximumReactorPower * 0.05;
 
-            // update megajoule storage capacity
-            if (megajouleResource != null)
-            {
-                var ratio = Math.Min(1, megajouleResource.amount / megajouleResource.maxAmount);
-                megajouleResource.maxAmount = partBaseMegajoules;
-                megajouleResource.amount = partBaseMegajoules * ratio;
-            }
-
-            // update thermalheart storage capacity
-            if (thermalResource != null)
-            {
-                var ratio = Math.Min(1, thermalResource.amount / thermalResource.maxAmount);
-                thermalResource.maxAmount = partBaseMegajoules;
-                thermalResource.amount = partBaseMegajoules * ratio;
-            }
+            // initialize power buffers
+            UpdateBuffers(powerInputMegajoules);
 
             // look for any transmitter partmodule
             part_transmitter = part.FindModuleImplementing<MicrowavePowerTransmitter>();
@@ -876,6 +879,69 @@ namespace FNPlugin
                 animation = part.FindModelAnimators(animName).FirstOrDefault();
         }
 
+        private void UpdateBuffers(double inputPower)
+        {
+            try
+            {
+
+                if (wasteheatResource != null && TimeWarp.fixedDeltaTime != previousDeltaTime)
+                {
+                    var ratio = Math.Min(1, wasteheatResource.amount / wasteheatResource.maxAmount);
+                    wasteheatResource.maxAmount = partBaseWasteheat * TimeWarp.fixedDeltaTime; ;
+                    wasteheatResource.amount = wasteheatResource.maxAmount * ratio;
+                }
+
+                if (inputPower > 0)
+                {
+                    if (thermalResource != null)
+                    {
+                        var ratio = Math.Min(1, thermalResource.amount / thermalResource.maxAmount);
+                        thermalResource.maxAmount = inputPower * TimeWarp.fixedDeltaTime;
+                        thermalResource.amount = thermalResource.maxAmount * ratio;
+                    }
+
+                    if (megajouleResource != null)
+                    {
+                        var ratio = Math.Min(1, megajouleResource.amount / megajouleResource.maxAmount);
+                        megajouleResource.maxAmount = inputPower * TimeWarp.fixedDeltaTime;
+                        megajouleResource.amount = megajouleResource.maxAmount * ratio;
+                    }
+                    if (electricResource != null)
+                    {
+                        var ratio = Math.Min(1, electricResource.amount / electricResource.maxAmount);
+                        electricResource.maxAmount = inputPower * TimeWarp.fixedDeltaTime;
+                        electricResource.amount = electricResource.maxAmount * ratio;
+                    }
+                }
+                else
+                {
+                    if (thermalResource != null && thermalResource.maxAmount > 0.001)
+                    {
+                        var ratio = Math.Min(1, thermalResource.amount / thermalResource.maxAmount);
+                        thermalResource.maxAmount = Math.Min(StableMaximumReactorPower * TimeWarp.fixedDeltaTime, thermalResource.maxAmount * 0.99);
+                        thermalResource.amount = Math.Min(thermalResource.maxAmount, thermalResource.amount);
+                    }
+                    if (megajouleResource != null && megajouleResource.maxAmount > 0.001)
+                    {
+                        var ratio = Math.Min(1, megajouleResource.amount / megajouleResource.maxAmount);
+                        megajouleResource.maxAmount = Math.Min(StableMaximumReactorPower * TimeWarp.fixedDeltaTime, megajouleResource.maxAmount * 0.9);
+                        megajouleResource.amount = Math.Min(megajouleResource.maxAmount, megajouleResource.amount);
+                    }
+                    if (electricResource != null && electricResource.maxAmount > 0.001)
+                    {
+                        var ratio = Math.Min(1, electricResource.amount / electricResource.maxAmount);
+                        electricResource.maxAmount = Math.Min(StableMaximumReactorPower * TimeWarp.fixedDeltaTime, electricResource.maxAmount * 0.9);
+                        electricResource.amount = Math.Min(electricResource.maxAmount, electricResource.amount);
+                    }
+                }
+            }    
+            catch (Exception e)
+            {
+                Debug.LogError("[KSPI] - MicrowavePowerReceiver.UpdateBuffers " + e.Message);
+            }
+            previousDeltaTime = TimeWarp.fixedDeltaTime;
+        }
+
         /// <summary>
         /// Event handler called when part is attached to another part
         /// </summary>
@@ -895,7 +961,7 @@ namespace FNPlugin
             }
             catch (Exception e)
             {
-                Debug.LogError("[KSPI] - Reactor.OnEditorAttach " + e.Message);
+                Debug.LogError("[KSPI] - MicrowavePowerReceiver.OnEditorAttach " + e.Message);
             }
         }
 
@@ -953,11 +1019,12 @@ namespace FNPlugin
                 chooseField.guiActiveEditor = canSwitchBandwidthInEditor;
                 chooseField.guiActive = canSwitchBandwidthInFlight;
 
-                var chooseOptionEditor = chooseField.uiControlEditor as UI_ChooseOption;
-                var chooseOptionFlight = chooseField.uiControlFlight as UI_ChooseOption;
-
                 var names = BandwidthConverters.Select(m => m.bandwidthName).ToArray();
+
+                var chooseOptionEditor = chooseField.uiControlEditor as UI_ChooseOption;
                 chooseOptionEditor.options = names;
+
+                var chooseOptionFlight = chooseField.uiControlFlight as UI_ChooseOption;
                 chooseOptionFlight.options = names;
 
                 UpdateFromGUI(chooseField, selectedBandwidthConfiguration);
@@ -1147,7 +1214,7 @@ namespace FNPlugin
             Fields["minimumWavelength"].guiActive = receiverIsEnabled;
             Fields["maximumWavelength"].guiActive = receiverIsEnabled;
 
-            Fields["selectedBandwidthConfiguration"].guiActive = canSwitchBandwidthInEditor && receiverIsEnabled;
+            Fields["selectedBandwidthConfiguration"].guiActive = canSwitchBandwidthInFlight && receiverIsEnabled;
 
             Fields["solarFacingFactor"].guiActive = solarReceptionSurfaceArea > 0;
             Fields["solarFlux"].guiActive = solarReceptionSurfaceArea > 0;
@@ -1286,45 +1353,47 @@ namespace FNPlugin
             base.OnFixedUpdate();
         }
 
-        public override void OnFixedUpdateResourceSuppliable(float fixedDeltaTime)
+        public override void OnFixedUpdateResourceSuppliable(double fixedDeltaTime)
         {
+            total_conversion_waste_heat_production = 0;
+            currentIsThermalEnergyGenratorActive = 0;
+            storedIsThermalEnergyGenratorActive = currentIsThermalEnergyGenratorActive;
+
+            wasteheatRatio = CheatOptions.IgnoreMaxTemperature ? 0 : Math.Min(1, getResourceBarRatio(FNResourceManager.FNRESOURCE_WASTEHEAT));
+
+            CalculateThermalSolarPower();
+
+            if (initializationCountdown > 0)
+            {
+                initializationCountdown--;
+
+                part.temperature = storedTemp;
+                part.skinTemperature = storedTemp;
+            }
+            else
+                storedTemp = part.temperature;
+
+            if (receiverIsEnabled && radiatorMode)
+            {
+                if (fnRadiator != null)
+                {
+                    fnRadiator.canRadiateHeat = true;
+                    fnRadiator.radiatorIsEnabled = true;
+                }
+                UpdateBuffers(0);
+                return;
+            }
+            else
+            {
+                if (fnRadiator != null)
+                {
+                    fnRadiator.canRadiateHeat = false;
+                    fnRadiator.radiatorIsEnabled = false;
+                }
+            }
+
             try
             {
-                total_conversion_waste_heat_production = 0;
-                currentIsThermalEnergyGenratorActive = 0;
-                storedIsThermalEnergyGenratorActive = currentIsThermalEnergyGenratorActive;
-
-                wasteheatRatio = CheatOptions.IgnoreMaxTemperature ? 0 : Math.Min(1, getResourceBarRatio(FNResourceManager.FNRESOURCE_WASTEHEAT));
-
-                CalculateThermalSolarPower();
-
-                if (initializationCountdown > 0)
-                {
-                    initializationCountdown--;
-
-                    part.temperature = storedTemp;
-                    part.skinTemperature = storedTemp;
-                }
-                else
-                    storedTemp = part.temperature;
-
-                if (receiverIsEnabled && radiatorMode)
-                {
-                    if (fnRadiator != null)
-                    {
-                        fnRadiator.canRadiateHeat = true;
-                        fnRadiator.radiatorIsEnabled = true;
-                    }
-                    return;
-                }
-                else
-                {
-                    if (fnRadiator != null)
-                    {
-                        fnRadiator.canRadiateHeat = false;
-                        fnRadiator.radiatorIsEnabled = false;
-                    }
-                }
 
                 if (receiverIsEnabled && !radiatorMode)
                 {
@@ -1334,6 +1403,7 @@ namespace FNPlugin
                         deactivate_timer++;
                         if (FlightGlobals.ActiveVessel == vessel && deactivate_timer > 2)
                             ScreenMessages.PostScreenMessage("Warning Dangerous Overheating Detected: Emergency microwave power shutdown occuring NOW!", 5f, ScreenMessageStyle.UPPER_CENTER);
+                        UpdateBuffers(0);
                         return;
                     }
 
@@ -1460,14 +1530,8 @@ namespace FNPlugin
                     // add alternator power
                     AddAlternatorPower();
 
-                    // update wasteheat buffer
-                    if (powerInputMegajoules > 0 && wasteheatResource != null)
-                    {
-                        var ratio = wasteheatResource.maxAmount > 0 ? wasteheatResource.amount / wasteheatResource.maxAmount : 0;
-
-                        wasteheatResource.maxAmount = partBaseWasteheat + powerInputMegajoules * TimeWarp.fixedDeltaTime;
-                        wasteheatResource.amount = wasteheatResource.maxAmount * ratio;
-                    }
+                    // update energy buffers
+                    UpdateBuffers(powerInputMegajoules);
 
                     if (isThermalReceiverSlave || thermalMode)
                     {
@@ -1547,6 +1611,8 @@ namespace FNPlugin
                     connectedrelaysi = 0;
                     ThermalPower = 0;
 
+                    UpdateBuffers(0);
+
                     received_power.Clear();
 
                     if (animT != null)
@@ -1558,78 +1624,87 @@ namespace FNPlugin
             }
             catch (Exception e)
             {
-                Debug.LogError("[KSPI] - Exception in OnFixedUpdateResourceSuppliable " + e.Message + " at " + e.StackTrace);
+                Debug.LogError("[KSPI] - Exception in MicrowavePowerReceiver.OnFixedUpdateResourceSuppliable " + e.Message + " at " + e.StackTrace);
             }
         }
 
         private void CalculateThermalSolarPower()
         {
-            if (solarReceptionSurfaceArea > 0 && solarReceptionEfficiency > 0)
-            {
-                solarFluxQueue.Enqueue(part.vessel.solarFlux);
+            if (solarReceptionSurfaceArea <= 0 || solarReceptionEfficiency <= 0)
+                return;
 
-                if (solarFluxQueue.Count > 50)
-                    solarFluxQueue.Dequeue();
+            solarFluxQueue.Enqueue(part.vessel.solarFlux);
 
-                solarFlux = solarFluxQueue.Count > 10 
-                    ? solarFluxQueue.OrderBy(m => m).Skip(10).Average()
-                    : solarFluxQueue.Average();
+            if (solarFluxQueue.Count > 50)
+                solarFluxQueue.Dequeue();
 
-                solarInputMegajoulesMax = solarReceptionSurfaceArea * (solarFlux / 1e+6) * solarReceptionEfficiency;
-                solarFacingFactor = Math.Pow(GetSolarFacingFactor(localStar, part.WCoM), solarFacingExponent);
-                solarInputMegajoules = solarInputMegajoulesMax * solarFacingFactor;
-            }
+            solarFlux = solarFluxQueue.Count > 10
+                ? solarFluxQueue.OrderBy(m => m).Skip(10).Average()
+                : solarFluxQueue.Average();
+
+            solarInputMegajoulesMax = solarReceptionSurfaceArea * (solarFlux / 1e+6) * solarReceptionEfficiency;
+            solarFacingFactor = Math.Pow(GetSolarFacingFactor(localStar, part.WCoM), solarFacingExponent);
+            solarInputMegajoules = solarInputMegajoulesMax * solarFacingFactor;
         }
 
         private void AddAlternatorPower()
         {
-            if (alternatorRatio != 0)
-            {
-                supplyFNResourceFixed(alternatorRatio * powerInputMegajoules * TimeWarp.fixedDeltaTime / 1000, FNResourceManager.FNRESOURCE_MEGAJOULES);
-            }
+            if (alternatorRatio == 0)
+                return;
+            
+            supplyFNResourceFixed(alternatorRatio * powerInputMegajoules * TimeWarp.fixedDeltaTime / 1000, FNResourceManager.FNRESOURCE_MEGAJOULES);
         }
 
         private void ProcesSolarCellEnergy()
         {
-            if (deployableSolarPanel != null)
+            if (deployableSolarPanel == null)
+                return;
+
+            // readout kerbalism solar power output so we can remove it
+            if (_field_kerbalism_output != null)
+                kerbalismPowerOutput = _field_kerbalism_output.GetValue<double>(warpfixer);
+
+            flowRate = deployableSolarPanel.flowRate > 0
+                ? deployableSolarPanel.flowRate
+                : deployableSolarPanel.chargeRate * deployableSolarPanel._flowRate;
+
+            flowRateQueue.Enqueue(flowRate);
+
+            if (flowRateQueue.Count > 50)
+                flowRateQueue.Dequeue();
+
+            var stabalizedFlowRate = flowRateQueue.Count > 10
+                ? flowRateQueue.OrderBy(m => m).Skip(10).Average()
+                : flowRateQueue.Average();
+
+            double maxSupply = deployableSolarPanel._distMult > 0
+                ? Math.Max(stabalizedFlowRate, deployableSolarPanel.chargeRate * deployableSolarPanel._distMult * deployableSolarPanel._efficMult)
+                : stabalizedFlowRate;
+
+            // extract power otherwise we end up with double power
+            var power_reduction = deployableSolarPanel.flowRate > 0 ? deployableSolarPanel.flowRate : kerbalismPowerOutput;
+
+            if (deployableSolarPanel.resourceName == FNResourceManager.STOCK_RESOURCE_ELECTRICCHARGE)
             {
-                flowRateQueue.Enqueue(deployableSolarPanel.flowRate);
+                part.RequestResource(FNResourceManager.STOCK_RESOURCE_ELECTRICCHARGE, power_reduction * TimeWarp.fixedDeltaTime);
 
-                if (flowRateQueue.Count > 50)
-                    flowRateQueue.Dequeue();
-
-                var stabalizedFlowRate = flowRateQueue.Count > 10
-                    ? flowRateQueue.OrderBy(m => m).Skip(10).Average()
-                    : flowRateQueue.Average();
-
-                double fixed_stabalized_flow_rate = stabalizedFlowRate * TimeWarp.fixedDeltaTime;
-
-                double maxSupply = deployableSolarPanel._distMult > 0
-                    ? Math.Max(fixed_stabalized_flow_rate, deployableSolarPanel.chargeRate * deployableSolarPanel._distMult * deployableSolarPanel._efficMult * TimeWarp.fixedDeltaTime)
-                    : fixed_stabalized_flow_rate;
-
-                if (deployableSolarPanel.resourceName == FNResourceManager.STOCK_RESOURCE_ELECTRICCHARGE)
-                {
-                    part.RequestResource(FNResourceManager.STOCK_RESOURCE_ELECTRICCHARGE, fixed_stabalized_flow_rate);
-
-                    if (fixed_stabalized_flow_rate > 0)
-                        fixed_stabalized_flow_rate /= 1000;
-                    if (maxSupply > 0)
-                        maxSupply /= 1000;
-                }
-                else if (deployableSolarPanel.resourceName == FNResourceManager.FNRESOURCE_MEGAJOULES)
-                {
-                    part.RequestResource(FNResourceManager.FNRESOURCE_MEGAJOULES, fixed_stabalized_flow_rate);
-                }
-                else
-                {
-                    fixed_stabalized_flow_rate = 0;
-                    maxSupply = 0;
-                }
-
-                if (fixed_stabalized_flow_rate > 0)
-                    supplyFNResourceFixedWithMax(fixed_stabalized_flow_rate, maxSupply, FNResourceManager.FNRESOURCE_MEGAJOULES);
+                if (stabalizedFlowRate > 0)
+                    stabalizedFlowRate /= 1000;
+                if (maxSupply > 0)
+                    maxSupply /= 1000;
             }
+            else if (deployableSolarPanel.resourceName == FNResourceManager.FNRESOURCE_MEGAJOULES)
+            {
+                part.RequestResource(FNResourceManager.FNRESOURCE_MEGAJOULES, power_reduction * TimeWarp.fixedDeltaTime);
+            }
+            else
+            {
+                stabalizedFlowRate = 0;
+                maxSupply = 0;
+            }
+
+            if (stabalizedFlowRate > 0)
+                supplyFNResourcePerSecondWithMax(stabalizedFlowRate, maxSupply, FNResourceManager.FNRESOURCE_MEGAJOULES);
         }
 
         public double MaxStableMegaWattPower
@@ -1869,12 +1944,6 @@ namespace FNPlugin
                 }
 
                 bool hasLineOfSight = PluginHelper.HasLineOfSightWith(this.vessel, transmitter.Vessel);
-
-                if (!hasLineOfSight)
-                {
-                    //Debug.Log("[KSPI] - transmitter out of sight!");
-                }
-
                 if (hasLineOfSight)
                 {
                     //Debug.Log("[KSPI] - has line of sight with vessel " + transmitter.Vessel.name);

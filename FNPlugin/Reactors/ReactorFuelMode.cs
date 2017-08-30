@@ -48,6 +48,12 @@ namespace FNPlugin
 
             var first = Variants.First();
 
+            AlternativeFuelType1 = first.AlternativeFuelType1;
+            AlternativeFuelType2 = first.AlternativeFuelType2;
+            AlternativeFuelType3 = first.AlternativeFuelType3;
+			AlternativeFuelType4 = first.AlternativeFuelType4;
+            AlternativeFuelType5 = first.AlternativeFuelType5;
+
             Index = first.Index;
             ModeGUIName = first.ModeGUIName;
             TechLevel = first.TechLevel;
@@ -81,6 +87,12 @@ namespace FNPlugin
         public float TritiumBreedModifier { get; private set; }
         public double FuelEfficencyMultiplier { get; private set; }
 
+        public string AlternativeFuelType1 { get; private set; }
+        public string AlternativeFuelType2 { get; private set; }
+        public string AlternativeFuelType3 { get; private set; }
+		public string AlternativeFuelType4 { get; private set; }
+        public string AlternativeFuelType5 { get; private set; }
+
         public List<ReactorFuelMode> Variants { get; private set; }
         public List<ResourceGroupMetaData> ResourceGroups { get; private set; }
 
@@ -100,6 +112,7 @@ namespace FNPlugin
     {
         protected int _reactor_type;
         protected int _index;
+        protected string _name;
         protected string _mode_gui_name;
         protected string _techRequirement;
         protected List<ReactorFuel> _fuels;
@@ -116,13 +129,26 @@ namespace FNPlugin
         protected int _techLevel;
         protected bool _aneutronic;
 
+        protected string _alternativeFuelType1;
+        protected string _alternativeFuelType2;
+        protected string _alternativeFuelType3;
+		protected string _alternativeFuelType4;
+        protected string _alternativeFuelType5;
+
         public ReactorFuelMode(ConfigNode node)
         {
+            _name = node.GetValue("name");
             _mode_gui_name = node.GetValue("GUIName");
             _reactor_type = Convert.ToInt32(node.GetValue("ReactorType"));
             _index = node.HasValue("Index") ? int.Parse(node.GetValue("Index")) : 0;
 
             _techRequirement = node.HasValue("TechRequirement") ? node.GetValue("TechRequirement") : String.Empty;
+
+            _alternativeFuelType1 = node.HasValue("AlternativeFuelType1") ? node.GetValue("AlternativeFuelType1") : String.Empty;
+            _alternativeFuelType2 = node.HasValue("AlternativeFuelType2") ? node.GetValue("AlternativeFuelType2") : String.Empty;
+            _alternativeFuelType3 = node.HasValue("AlternativeFuelType3") ? node.GetValue("AlternativeFuelType3") : String.Empty;
+			_alternativeFuelType4 = node.HasValue("AlternativeFuelType4") ? node.GetValue("AlternativeFuelType4") : String.Empty;
+            _alternativeFuelType5 = node.HasValue("AlternativeFuelType5") ? node.GetValue("AlternativeFuelType5") : String.Empty;
 
             _reactionRate = node.HasValue("NormalisedReactionRate") ? Single.Parse(node.GetValue("NormalisedReactionRate")) : 1;
             _powerMultiplier = node.HasValue("NormalisedPowerMultiplier") ? Single.Parse(node.GetValue("NormalisedPowerMultiplier")) : 1;
@@ -148,9 +174,17 @@ namespace FNPlugin
             AllProductResourcesDefinitionsAvailable = _products.All(m => m.Definition != null);
         }
 
+        public string AlternativeFuelType1 { get { return _alternativeFuelType1; } }
+        public string AlternativeFuelType2 { get { return _alternativeFuelType2; } }
+        public string AlternativeFuelType3 { get { return _alternativeFuelType3; } }
+		public string AlternativeFuelType4 { get { return _alternativeFuelType4; } }
+        public string AlternativeFuelType5 { get { return _alternativeFuelType5; } }
+
         public int SupportedReactorTypes { get { return _reactor_type; } }
 
         public int Index { get { return _index; } }
+
+        public string Name { get { return _name; } }
 
         public string ModeGUIName { get { return _mode_gui_name; } }
 

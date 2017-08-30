@@ -215,7 +215,7 @@ namespace FNPlugin
         public double upgradedFuelEfficiency = 1;
         [KSPField(isPersistant = false)]
         public bool containsPowerGenerator = false;
-        [KSPField(isPersistant = false)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = false, guiName = "fuelUsePerMJMult")]
         public double fuelUsePerMJMult = 1;
         [KSPField(isPersistant = false)]
         public double wasteHeatMultiplier = 1;
@@ -295,24 +295,24 @@ namespace FNPlugin
         public string currentTPwr = String.Empty;
         [KSPField(isPersistant = false, guiActive = false, guiName = "Charged Power")]
         public string currentCPwr = String.Empty;
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = true, guiName = "Fuel")]
+        [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = true, guiName = "Fuel")]        // keep active as it allows switching
         public string fuelModeStr = String.Empty;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = true, guiName = "Connections Surface")]
         public string connectedRecieversStr = String.Empty;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = true, guiName = "Reactor Surface", guiUnits = " m2")]
         public double reactorSurface;
 
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Max Power to Supply frame")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Max Power to Supply frame")]
         protected double max_power_to_supply = 0;
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false)]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Requested Thermal Power")]
         protected double requested_thermal_to_supply_per_second;
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Max TP To Supply", guiFormat = "F6")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Max TP To Supply", guiFormat = "F6")]
         protected double max_thermal_to_supply_per_second;
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         protected double requested_charged_to_supply_per_second;
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Max CP To Supply", guiFormat = "F6")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Max CP To Supply", guiFormat = "F6")]
         protected double max_charged_to_supply_per_second;
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Min throttle")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Min throttle")]
         protected double min_throttle;
 
         // Gui
@@ -320,16 +320,16 @@ namespace FNPlugin
         public float partMass = 0;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Max Thermal Power", guiUnits = " MW", guiFormat = "F6")]
         public double maximumThermalPowerEffective = 0;
-        [KSPField(isPersistant = false, guiActive = false, guiName = "Gee Force Mod")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Gee Force Modifier")]
         public double geeForceModifier;
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Power Produced", guiUnits = " MW", guiFormat = "F6")]
+        [KSPField(isPersistant = true, guiActive = false, guiName = "Power Produced", guiUnits = " MW", guiFormat = "F6")]
         public double ongoing_total_power_generated;
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Thermal Power Generated", guiFormat = "F6")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Thermal Power Generated", guiFormat = "F6")]
         protected double ongoing_thermal_power_generated;
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Charged Power Generated", guiFormat = "F6")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Charged Power Generated", guiFormat = "F6")]
         protected double ongoing_charged_power_generated;
-
-
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Consumed fuel per Frame", guiFormat = "F6")]
+        protected double consume_amount_in_unit_of_storage;
 
         // value types
         protected bool initialized = false;
@@ -349,9 +349,8 @@ namespace FNPlugin
         protected long last_draw_update;
         protected double staticBreedRate;
 
-        //public double total_power_received_per_second = 0;
-        public double totalAmountLithium = 0;
-        public double totalMaxAmountLithium = 0;
+        protected double totalAmountLithium = 0;
+        protected double totalMaxAmountLithium = 0;
         protected double balanced_thermal_power_received_fixed = 0;
         protected double balanced_charged_power_received_fixed = 0;
 
@@ -1221,18 +1220,18 @@ namespace FNPlugin
                     {
                         currentTPwr = PluginHelper.getFormattedPowerString(ongoing_thermal_power_generated) + "_th";
                         currentCPwr = PluginHelper.getFormattedPowerString(ongoing_charged_power_generated) + "_cp";
-                        statusStr = "Active (" + powerPcnt.ToString("0.00") + "%)";
+                        statusStr = "Active (" + powerPcnt.ToString("0.000") + "%)";
                     }
                     else
                     {
-						if (current_fuel_variant != null)
-							statusStr = current_fuel_variant.ReactorFuels.FirstOrDefault(fuel => GetFuelAvailability(fuel) <= 0).ResourceName + " Deprived";
+                        if (current_fuel_variant != null)
+                            statusStr = current_fuel_variant.ReactorFuels.FirstOrDefault(fuel => GetFuelAvailability(fuel) <= 0).ResourceName + " Deprived";
                     }
                 }
                 else
                 {
                     if (powerPcnt > 0)
-                        statusStr = "Decay Heating (" + powerPcnt.ToString("0.00") + "%)";
+                        statusStr = "Decay Heating (" + powerPcnt.ToString("0.000") + "%)";
                     else
                         statusStr = "Offline";
                 }
@@ -1301,16 +1300,21 @@ namespace FNPlugin
                     geeForceModifier = 1;
 
                 current_fuel_variants_sorted = CurrentFuelMode.GetVariantsOrderedByFuelRatio(this.part, FuelEfficiency, max_power_to_supply * geeForceModifier, fuelUsePerMJMult);
-                current_fuel_variant = current_fuel_variants_sorted.First();
+                current_fuel_variant = current_fuel_variants_sorted.FirstOrDefault();
+                
+                stored_fuel_ratio = CheatOptions.InfinitePropellant ? 1 : current_fuel_variant != null ? Math.Min(current_fuel_variant.FuelRatio, 1) : 0;
 
-                stored_fuel_ratio = CheatOptions.InfinitePropellant ? 1 : Math.Min(current_fuel_variant.FuelRatio, 1);
+                LookForAlternativeFuelTypes();
 
                 UpdateCapacities(stored_fuel_ratio);
 
-                min_throttle = stored_fuel_ratio > 0 ? MinimumThrottle / stored_fuel_ratio : 1;
-
-                var safetyThrotleModifier = GetSafetyOverheatPreventionRatio();
-
+                if (stored_fuel_ratio > 0.0001 && stored_fuel_ratio < 0.99)
+                {
+                    string message = "Ran out of fuel for " + CurrentFuelMode.ModeGUIName + " but no alternative fuel mode found!";
+                    Debug.Log("[KSPI] - " + message);
+                    ScreenMessages.PostScreenMessage(message, 20.0f, ScreenMessageStyle.UPPER_CENTER);
+                }
+             
                 thermalThrottleRatio = connectedEngines.Any(m => !m.RequiresChargedPower) ? connectedEngines.Where(m => !m.RequiresChargedPower).Max(e => e.CurrentThrottle) : 0;
                 chargedThrottleRatio = connectedEngines.Any(m => m.RequiresChargedPower) ? connectedEngines.Where(m => m.RequiresChargedPower).Max(e => e.CurrentThrottle) : 0;
 
@@ -1320,7 +1324,6 @@ namespace FNPlugin
                 var charged_generator_ratio = chargedParticleEnergyEfficiency * storedGeneratorChargedEnergyRequestRatio;
 
                 maximum_thermal_request_ratio = Math.Max(thermal_propulsion_ratio, thermal_generator_ratio);
-                //maximum_charged_request_ratio = Math.Max(Math.Max(thermal_propulsion_ratio, charged_propulsion_ratio), Math.Max(thermal_generator_ratio, charged_generator_ratio));
                 maximum_charged_request_ratio = Math.Max(charged_propulsion_ratio, charged_generator_ratio);
                 maximum_reactor_request_ratio = Math.Max(maximum_thermal_request_ratio, maximum_charged_request_ratio);
 
@@ -1338,12 +1341,14 @@ namespace FNPlugin
 
                 power_request_ratio = Math.Max(Math.Max(thermalThrottleRatio, chargedThrottleRatio), Math.Max(storedGeneratorThermalEnergyRequestRatio, storedGeneratorChargedEnergyRequestRatio));
 
+                var safetyThrotleModifier = GetSafetyOverheatPreventionRatio();
                 max_charged_to_supply_per_second = maximumChargedPower * stored_fuel_ratio * geeForceModifier * safetyThrotleModifier * power_access_modifier;
                 requested_charged_to_supply_per_second = max_charged_to_supply_per_second * power_request_ratio * maximum_charged_request_ratio;
 
                 var chargedParticlesManager = getManagerForVessel(FNResourceManager.FNRESOURCE_CHARGED_PARTICLES);
                 var thermalHeatManager = getManagerForVessel(FNResourceManager.FNRESOURCE_THERMALPOWER);
 
+                min_throttle = stored_fuel_ratio > 0 ? MinimumThrottle / stored_fuel_ratio : 1;
                 var needed_charged_power_per_second = getNeededPowerSupplyPerSecondWithMinimumRatio(max_charged_to_supply_per_second, min_throttle, FNResourceManager.FNRESOURCE_CHARGED_PARTICLES, chargedParticlesManager);
                 charged_power_ratio = Math.Min(maximum_charged_request_ratio, maximumChargedPower > 0 ? needed_charged_power_per_second / maximumChargedPower : 0);
                          
@@ -1388,7 +1393,7 @@ namespace FNPlugin
                     // produce reactor products
                     foreach (ReactorProduct product in current_fuel_variant.ReactorProducts)
                     {
-                        var massProduced = ProduceReactorProduct(product, ongoing_total_power_generated / geeForceModifier);
+                        var massProduced = ProduceReactorProduct(product, total_power_received_fixed / geeForceModifier);
                         reactorProduction.Add(new ReactorProduction() { fuelmode = product, mass = massProduced });
                     }
                 }
@@ -1433,7 +1438,55 @@ namespace FNPlugin
                     chargedPowerResource.amount = 0;
                 }
             }
+        }
 
+        private void LookForAlternativeFuelTypes()
+        {
+            SwitchToAlternativeFuelWhenAvailable(CurrentFuelMode.AlternativeFuelType1);
+            SwitchToAlternativeFuelWhenAvailable(CurrentFuelMode.AlternativeFuelType2);
+            SwitchToAlternativeFuelWhenAvailable(CurrentFuelMode.AlternativeFuelType3);
+            SwitchToAlternativeFuelWhenAvailable(CurrentFuelMode.AlternativeFuelType4);
+            SwitchToAlternativeFuelWhenAvailable(CurrentFuelMode.AlternativeFuelType5);
+        }
+
+        private void SwitchToAlternativeFuelWhenAvailable(string alternativeFuelTypeName)
+        {
+            if (stored_fuel_ratio >= 0.99)
+                return;
+
+            if (String.IsNullOrEmpty(alternativeFuelTypeName))
+                return;
+
+            // look for most advanced version
+            var alternativeFuelType = fuel_modes.LastOrDefault(m => m.ModeGUIName.Contains(alternativeFuelTypeName));
+            if (alternativeFuelType == null)
+            {
+                Debug.LogWarning("[KSPI] failed to find fueltype " + alternativeFuelTypeName);
+                return;
+            }
+
+            Debug.Log("[KSPI] sorting fuelmodes for alternative fuel type " + alternativeFuelTypeName);
+            var alternative_fuel_variants_sorted = alternativeFuelType.GetVariantsOrderedByFuelRatio(this.part, FuelEfficiency, max_power_to_supply, fuelUsePerMJMult);
+
+            var alternative_fuel_variant = alternative_fuel_variants_sorted.FirstOrDefault();
+            if (alternative_fuel_variant == null)
+            {
+                Debug.LogError("[KSPI] - failed to find any variant for fueltype " + alternativeFuelTypeName);
+                return;
+            }
+
+            if (alternative_fuel_variant.FuelRatio < 0.99)
+            {
+                Debug.LogWarning("[KSPI] - failed to find sufficient resource for " + alternative_fuel_variant.Name);
+                return;
+            }
+
+            var message = "Ran out of fuel for fuelmode " + CurrentFuelMode.ModeGUIName + " switching to alternative fuel mode " + alternativeFuelType.ModeGUIName;
+            Debug.Log("[KSPI] - " + message);
+            ScreenMessages.PostScreenMessage(message, 20.0f, ScreenMessageStyle.UPPER_CENTER);
+
+            CurrentFuelMode = alternativeFuelType;
+            stored_fuel_ratio = current_fuel_variant.FuelRatio;
         }
 
         private void StoreGeneratorRequests()
@@ -1506,7 +1559,7 @@ namespace FNPlugin
 
                 if (chargedPowerResource != null)
                 {
-					var chargedPowerRatio = Math.Max(0, Math.Min(1, chargedPowerResource.amount / chargedPowerResource.maxAmount));
+                    var chargedPowerRatio = Math.Max(0, Math.Min(1, chargedPowerResource.amount / chargedPowerResource.maxAmount));
                     chargedPowerResource.maxAmount = Math.Max(0.0001, 4 * timeWarpFixedDeltaTime * MaximumChargedPower);
                     chargedPowerResource.amount = Math.Max(0, Math.Min(chargedPowerResource.maxAmount, chargedPowerRatio * chargedPowerResource.maxAmount));
                 }
@@ -1669,7 +1722,7 @@ namespace FNPlugin
             // produce reactor products
             foreach (ReactorProduct product in persistant_fuel_variants_sorted.First().ReactorProducts)
             {
-                var massProduced = ProduceReactorProduct(product, delta_time_diff * ongoing_total_power_generated);
+                ProduceReactorProduct(product, delta_time_diff * ongoing_total_power_generated);
             }
 
             // breed tritium
@@ -1751,7 +1804,7 @@ namespace FNPlugin
 
         protected double ConsumeReactorFuel(ReactorFuel fuel, double MJpower)
         {
-            var consume_amount_in_unit_of_storage = MJpower * fuel.AmountFuelUsePerMJ * fuelUsePerMJMult / FuelEfficiency;
+            consume_amount_in_unit_of_storage = MJpower * fuel.AmountFuelUsePerMJ * fuelUsePerMJMult / FuelEfficiency;
 
             if (!fuel.ConsumeGlobal)
             {
@@ -1926,6 +1979,7 @@ namespace FNPlugin
                     render_window = false;
 
                 GUILayout.BeginVertical();
+
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(TypeName, bold_style, GUILayout.ExpandWidth(true));
                 GUILayout.EndHorizontal();
@@ -1949,35 +2003,23 @@ namespace FNPlugin
                 {
                     if (IsFuelNeutronRich && breedtritium && canBreedTritium)
                     {
+                        PrintToGUILayout("Fuel Neutron Breed Rate", 100 * CurrentFuelMode.NeutronsRatio + "% ", bold_style, text_style);
+
+                        var tritium_kg_day = tritium_produced_per_second * tritium_def.density * 1000 * PluginHelper.SecondsInDay;
+                        PrintToGUILayout("Tritium Breed Rate", tritium_kg_day.ToString("0.000000") + " kg/day ", bold_style, text_style);
+
+                        var helium_kg_day = helium_produced_per_second * helium_def.density * 1000 * PluginHelper.SecondsInDay;
+                        PrintToGUILayout("Helium Breed Rate", helium_kg_day.ToString("0.000000") + " kg/day ", bold_style, text_style);
+
                         double totalLithium6Amount;
                         double totalLithium6MaxAmount;
                         part.GetConnectedResourceTotals(lithium6_def.id, out totalLithium6Amount, out totalLithium6MaxAmount);
 
-                        double totalLithiumAmount = totalLithium6Amount;
-                        double totalLithiumMaxAmount = totalLithium6MaxAmount;
-
-                        double totalTritiumAmount;
-                        double totalTritiumMaxAmount;
-                        part.GetConnectedResourceTotals(tritium_def.id, out totalTritiumAmount, out totalTritiumMaxAmount);
-
-                        double totalHeliumAmount;
-                        double totalHeliumMaxAmount;
-                        part.GetConnectedResourceTotals(helium_def.id, out totalHeliumAmount, out totalHeliumMaxAmount);
-
-                        var MassHeliumAmount = totalHeliumAmount * helium_def.density * 1000;
-                        var MassHeliumMaxAmount = totalHeliumMaxAmount * helium_def.density * 1000;
-
-                        var MassTritiumAmount = totalTritiumAmount * tritium_def.density * 1000;
-                        var MassTritiumMaxAmount = totalTritiumMaxAmount * tritium_def.density * 1000;
-
-                        var tritium_kg_day = tritium_produced_per_second * tritium_def.density * 1000 * PluginHelper.SecondsInDay;
-
-                        PrintToGUILayout("Tritium Breed Rate", 100 * CurrentFuelMode.NeutronsRatio + "% " + tritium_kg_day.ToString("0.000000") + " kg/day ", bold_style, text_style);
-                        PrintToGUILayout("Lithium Reserves", totalLithiumAmount.ToString("0.000") + " L / " + totalLithiumMaxAmount.ToString("0.000") + " L", bold_style, text_style);
+                        PrintToGUILayout("Lithium Reserves", totalLithium6Amount.ToString("0.000") + " L / " + totalLithium6MaxAmount.ToString("0.000") + " L", bold_style, text_style);
 
                         var lithium_consumption_day = lithium_consumed_per_second * PluginHelper.SecondsInDay;
                         PrintToGUILayout("Lithium Consumption", lithium_consumption_day.ToString("0.00000") + " L/day", bold_style, text_style);
-                        var lithium_lifetime_total_days = lithium_consumption_day > 0 ? totalLithiumAmount / lithium_consumption_day : 0;
+                        var lithium_lifetime_total_days = lithium_consumption_day > 0 ? totalLithium6Amount / lithium_consumption_day : 0;
 
                         var lithium_lifetime_years = Math.Floor(lithium_lifetime_total_days / GameConstants.KERBIN_YEAR_IN_DAYS);
                         var lithium_lifetime_years_remainder_in_days = lithium_lifetime_total_days % GameConstants.KERBIN_YEAR_IN_DAYS;
@@ -1999,7 +2041,22 @@ namespace FNPlugin
                                 PrintToGUILayout("Lithium Remaining", lithium_lifetime_years + " years " , bold_style, text_style);
                         }
 
+                        double totalTritiumAmount;
+                        double totalTritiumMaxAmount;
+                        part.GetConnectedResourceTotals(tritium_def.id, out totalTritiumAmount, out totalTritiumMaxAmount);
+
+                        var MassTritiumAmount = totalTritiumAmount * tritium_def.density * 1000;
+                        var MassTritiumMaxAmount = totalTritiumMaxAmount * tritium_def.density * 1000;
+
                         PrintToGUILayout("Tritium Storage", MassTritiumAmount.ToString("0.000000") + " kg / " + MassTritiumMaxAmount.ToString("0.000000") + " kg", bold_style, text_style);
+
+                        double totalHeliumAmount;
+                        double totalHeliumMaxAmount;
+                        part.GetConnectedResourceTotals(helium_def.id, out totalHeliumAmount, out totalHeliumMaxAmount);
+
+                        var MassHeliumAmount = totalHeliumAmount * helium_def.density * 1000;
+                        var MassHeliumMaxAmount = totalHeliumMaxAmount * helium_def.density * 1000;
+
                         PrintToGUILayout("Helium Storage", MassHeliumAmount.ToString("0.000000") + " kg / " + MassHeliumMaxAmount.ToString("0.000000") + " kg", bold_style, text_style);
                     }
                     else
@@ -2021,11 +2078,11 @@ namespace FNPlugin
 
                         var availabilityInKg = availableRessources.Sum(m => m.amount * m.effectiveDensity * 1000);
 
-                        string availableText = availabilityInKg > 1000 ? (availabilityInKg / 1000).ToString("0.0000") + " t" : availabilityInKg.ToString("0.000000") + " kg";
+                        string availableText = availabilityInKg > 10000 ? (availabilityInKg / 1000).ToString("0.000000") + " t" : availabilityInKg.ToString("0.000000") + " kg";
 
                         PrintToGUILayout(fuel.FuelName + " Reserves", availableText + " (" + availableRessources.Count + " variants)", bold_style, text_style);
 
-                        var kg_fuel_use_per_day = 1000 * ongoing_total_power_generated * fuel.TonsFuelUsePerMJ * fuelUsePerMJMult / TimeWarpFixedDeltaTime / FuelEfficiency * CurrentFuelMode.NormalisedReactionRate * PluginHelper.SecondsInDay;
+                        var kg_fuel_use_per_day = 1000 * ongoing_total_power_generated * fuel.TonsFuelUsePerMJ * fuelUsePerMJMult / FuelEfficiency * CurrentFuelMode.NormalisedReactionRate * PluginHelper.SecondsInDay;
 
                         PrintToGUILayout(fuel.FuelName + " Consumption ", PluginHelper.getFormatedMassString(kg_fuel_use_per_day, "0.000000") + "/day", bold_style, text_style);
 
@@ -2063,10 +2120,10 @@ namespace FNPlugin
 
                             GUILayout.BeginHorizontal();
                             GUILayout.Label(product.FuelName + " Storage", bold_style, GUILayout.Width(150));
-                            GUILayout.Label((availabilityInKg).ToString("0.0000") + " kg / " + (maxAvailabilityInKg).ToString("0.0000") + " kg", text_style, GUILayout.Width(150));
+                            GUILayout.Label((availabilityInKg).ToString("0.000000") + " kg / " + (maxAvailabilityInKg).ToString("0.000000") + " kg", text_style, GUILayout.Width(150));
                             GUILayout.EndHorizontal();
 
-                            double dayly_production_in_Kg = 1000 * ongoing_total_power_generated * product.TonsProductUsePerMJ * fuelUsePerMJMult / TimeWarp.fixedDeltaTime / FuelEfficiency * CurrentFuelMode.NormalisedReactionRate * PluginHelper.SecondsInDay;
+                            double dayly_production_in_Kg = 1000 * ongoing_total_power_generated * product.TonsProductUsePerMJ * fuelUsePerMJMult / FuelEfficiency * CurrentFuelMode.NormalisedReactionRate * PluginHelper.SecondsInDay;
                             GUILayout.BeginHorizontal();
                             GUILayout.Label(product.FuelName + " Production", bold_style, GUILayout.Width(150));
                             GUILayout.Label(dayly_production_in_Kg.ToString("0.000000") + " kg/day", text_style, GUILayout.Width(150));

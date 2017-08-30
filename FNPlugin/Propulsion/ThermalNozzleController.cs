@@ -152,7 +152,7 @@ namespace FNPlugin
         public string upgradeCostStr;
         [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Base Heat Production")]
         public float baseHeatProduction = 100;
-        [KSPField(isPersistant = false, guiActive = false, guiActiveEditor = false, guiName = "Heat Production")]
+        [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "Heat Production")]
         public double engineHeatProduction;
         [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "Threshold", guiUnits = " kN", guiFormat = "F4")]
         public double pressureThreshold;
@@ -251,6 +251,9 @@ namespace FNPlugin
         protected string _fuelTechRequirement;
         protected float _fuelToxicity;
         protected double _heatDecompositionFraction;
+
+        protected float currentAnimatioRatio;
+        protected float trustCounter = 0;
 
         protected float _minDecompositionTemp;
         protected float _maxDecompositionTemp;
@@ -1011,6 +1014,20 @@ namespace FNPlugin
 
                 UpdateAnimation();
 
+                // prevent instant acceleration at startup
+                if (myAttachedEngine.getIgnitionState)
+                {
+                    if (trustCounter < 100)
+                    {
+                        var allowedThrustRatio = trustCounter / 100f;
+                        if (myAttachedEngine.requestedThrottle > allowedThrustRatio)
+                            myAttachedEngine.currentThrottle = allowedThrustRatio;
+                        trustCounter += (float)AttachedReactor.ReactorSpeedMult;
+                    }
+                }
+                else
+                    trustCounter = 0;
+
                 if (myAttachedEngine.getIgnitionState && myAttachedEngine.currentThrottle >= 0.01)
                     GenerateThrustFromReactorHeat();
                 else
@@ -1139,7 +1156,7 @@ namespace FNPlugin
             }
         }
 
-        private float currentAnimatioRatio;
+
 
         private void GenerateThrustFromReactorHeat()
         {
@@ -1286,7 +1303,7 @@ namespace FNPlugin
                 }
 
 				// Calculate
-                pre_coolers_active = _vesselPrecoolers.Sum(prc => prc.ValidAttachedIntakes); ;
+                pre_coolers_active = _vesselPrecoolers.Sum(prc => prc.ValidAttachedIntakes);
                 total_intakes = _vesselResourceIntakes.Count();
 				intakes_open = _vesselResourceIntakes.Where(mre => mre.intakeEnabled).Count();
 

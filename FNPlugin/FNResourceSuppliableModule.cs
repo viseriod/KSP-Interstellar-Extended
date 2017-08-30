@@ -11,6 +11,7 @@ namespace FNPlugin
 
         public override void OnStart(PartModule.StartState state)
         {
+            part.OnJustAboutToBeDestroyed -= OnJustAboutToBeDestroyed;
             part.OnJustAboutToBeDestroyed += OnJustAboutToBeDestroyed;
 
             if (vessel != null && vessel.parts != null)
@@ -30,8 +31,6 @@ namespace FNPlugin
 
             var priority_manager = getSupplyPriorityManager(this.vessel);
             priority_manager.Unregister(this);
-            if (priority_manager.processingPart == this)
-                priority_manager = null;
         }
 
         protected override ORSResourceManager createResourceManagerForResource(string resourcename)
@@ -44,6 +43,11 @@ namespace FNPlugin
             return FNResourceOvermanager.getResourceOvermanagerForResource(resourcename);
         }
 
+        protected override ORSResourceManager getManagerForVessel(string resourcename)
+        {
+            return getOvermanagerForResource(resourcename).getManagerForVessel(this.vessel);
+        }
+
         public override string getResourceManagerDisplayName()
         {
             string displayName = part.partInfo.title;
@@ -53,7 +57,7 @@ namespace FNPlugin
             return displayName;
         }   
      
-        public override void OnFixedUpdateResourceSuppliable(float fixedDeltaTime)
+        public override void OnFixedUpdateResourceSuppliable(double fixedDeltaTime)
         {
             // Nothing yet but do not remove
         }

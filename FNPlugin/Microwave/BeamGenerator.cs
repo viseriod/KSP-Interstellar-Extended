@@ -16,8 +16,6 @@ namespace FNPlugin.Microwave
 
         [KSPField(isPersistant = true)]
         public bool isInitialized = false;
-
-
         [KSPField(isPersistant = false)]
         public bool canSwitchWavelengthInFlight = true;
         [KSPField(isPersistant = false)]
@@ -30,8 +28,10 @@ namespace FNPlugin.Microwave
 
         [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Wavelength Name")]
         public string beamWaveName = "";
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Wavelength Length", guiFormat = "F9", guiUnits = " m")]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Wavelength in meter", guiFormat = "F9", guiUnits = " m")]
         public double wavelength;
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "WaveLength in SI")]
+        public string wavelengthText;
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Atmospheric Absorption", guiFormat = "F3", guiUnits = "%")]
         public double atmosphericAbsorptionPercentage = 10;
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Water Absorption", guiFormat = "F3", guiUnits = "%")]
@@ -46,12 +46,13 @@ namespace FNPlugin.Microwave
         public double targetMass = 1;
         [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = true, guiName = "Part Mass", guiUnits = " t")]
         public float partMass;
+        [KSPField(isPersistant = true)]
+        public double maximumPower;
 
         [KSPField(isPersistant = false)]
         public double powerMassFraction = 0.5;
         [KSPField(isPersistant = false)]
         public bool fixedMass = false;
-
 
         private BeamConfiguration activeConfiguration;
 
@@ -71,9 +72,21 @@ namespace FNPlugin.Microwave
                     beamConfigurations = part.FindModulesImplementing<BeamConfiguration>()
                         .Where(m => PluginHelper.HasTechRequirementOrEmpty(m.techRequirement0))
                         .OrderByDescending(m => m.wavelength).ToList();
+
+                    Debug.Log("[KSPI] - Found " + beamConfigurations.Count + " BeamConfigurations");
                 }
                 return beamConfigurations;
             }
+        }
+
+        public IEnumerable<BeamGenerator> FindBeamGenerators(Part origin)
+        {
+            var attachedParts = part.attachNodes.Where(m => m.attachedPart != null && m.attachedPart != origin);
+            var attachedBeanGenerators = attachedParts.Select(m => m.attachedPart.FindModuleImplementing<BeamGenerator>()).Where(m => m != null);
+
+            List<BeamGenerator> indirectBeamGenerators = attachedBeanGenerators.SelectMany(m => m.FindBeamGenerators(m.part)).ToList();
+            indirectBeamGenerators.Insert(0, this);
+            return indirectBeamGenerators;
         }
 
         public void Update()
@@ -83,6 +96,7 @@ namespace FNPlugin.Microwave
 
         public void UpdateMass(double maximumPower)
         {
+            this.maximumPower = maximumPower;
             targetMass = maximumPower * powerMassFraction * 0.001;
         }
 
@@ -93,6 +107,10 @@ namespace FNPlugin.Microwave
                 Debug.Log("BeamGenerator.OnRescale called with " + factor.absolute.linear);
                 storedMassMultiplier = Mathf.Pow(factor.absolute.linear, 3);
                 initialMass = part.prefabMass * storedMassMultiplier;
+                if (maximumPower > 0)
+                    targetMass = maximumPower * powerMassFraction * 0.001;
+                else
+                    targetMass = initialMass;
             }
             catch (Exception e)
             {
@@ -115,10 +133,11 @@ namespace FNPlugin.Microwave
 
         private void InitializeWavelengthSelector()
         {
-            Debug.Log("[KSP Interstellar] Setup Transmit Beams Configurations for " + part.partInfo.title);
+            Debug.Log("[KSPI] - Setup Transmit Beams Configurations for " + part.partInfo.title);
 
             var chooseField = Fields["selectedBeamConfiguration"];
             chooseField.guiActive = canSwitchWavelengthInFlight && BeamConfigurations.Count > 1;
+
             var chooseOptionEditor = chooseField.uiControlEditor as UI_ChooseOption;
             var chooseOptionFlight = chooseField.uiControlFlight as UI_ChooseOption;
 
@@ -136,13 +155,8 @@ namespace FNPlugin.Microwave
 
         private void UpdateFromGUI(BaseField field, object oldFieldValueObj)
         {
-            //Debug.Log("[KSP Interstellar] UpdateFromGUI is called with " + selectedBeamConfiguration);
-
             if (!BeamConfigurations.Any())
-            {
-                //Debug.Log("[KSP Interstellar] UpdateFromGUI no BeamConfigurations found");
                 return;
-            }
 
             if (isLoaded == false)
                 LoadInitialConfiguration();
@@ -150,12 +164,11 @@ namespace FNPlugin.Microwave
             {
                 if (selectedBeamConfiguration < BeamConfigurations.Count)
                 {
-                    //Debug.Log("[KSP Interstellar] UpdateFromGUI " + selectedBeamConfiguration + " < orderedBeamGenerators.Count");
                     activeConfiguration = BeamConfigurations[selectedBeamConfiguration];
                 }
                 else
                 {
-                    //Debug.Log("[KSP Interstellar] UpdateFromGUI " + selectedBeamConfiguration + " >= orderedBeamGenerators.Count");
+                    Debug.LogWarning("[KSPI] - selectedBeamConfiguration < BeamConfigurations.Count, selecting last");
                     selectedBeamConfiguration = BeamConfigurations.Count - 1;
                     activeConfiguration = BeamConfigurations.Last();
                 }
@@ -168,24 +181,28 @@ namespace FNPlugin.Microwave
             }
 
             beamWaveName = activeConfiguration.beamWaveName;
-            //Debug.Log("[KSP Interstellar] UpdateFromGUI set beamWaveName to " + beamWaveName);
-            
             wavelength = activeConfiguration.wavelength;
-            //Debug.Log("[KSP Interstellar] UpdateFromGUI set wavelenth to " + wavelength);
-            
+            wavelengthText = WavelenthToText(wavelength);
             atmosphericAbsorptionPercentage = activeConfiguration.atmosphericAbsorptionPercentage;
-            //Debug.Log("[KSP Interstellar] UpdateFromGUI set atmosphericAbsorptionPercentage to " + atmosphericAbsorptionPercentage);
-
             waterAbsorptionPercentage = activeConfiguration.waterAbsorptionPercentage;
-            //Debug.Log("[KSP Interstellar] UpdateFromGUI set waterAbsorptionPercentage to " + waterAbsorptionPercentage);
 
             UpdateEfficiencyPercentage();
         }
 
+        private string WavelenthToText(double wavelength)
+        {
+            if (wavelength > 1.0e-3)
+                return (wavelength * 1.0e+3).ToString() + " mm";
+            else if (wavelength > 7.5e-7)
+                return (wavelength * 1.0e+6).ToString() + " µm";
+            else if (wavelength > 1.0e-9)
+                return (wavelength * 1.0e+9).ToString() + " nm";
+            else
+                return (wavelength * 1.0e+12).ToString() + " pm";
+        }
+
         private void UpdateEfficiencyPercentage()
         {
-            //Debug.Log("[KSP Interstellar] UpdateFromGUI UpdateEfficiencyPercentage");
-
             var techLevel = -1;
 
             if (PluginHelper.HasTechRequirementAndNotEmpty(activeConfiguration.techRequirement3))
@@ -214,10 +231,6 @@ namespace FNPlugin.Microwave
             isLoaded = true;
 
             var currentWavelength = wavelength != 0 ? wavelength : 1;
-
-            //Debug.Log("[KSP Interstellar] UpdateFromGUI initialize initial beam configuration with wavelength target " + currentWavelength);
-
-            // find wavelength closes to target wavelength
             activeConfiguration = BeamConfigurations.FirstOrDefault();
             selectedBeamConfiguration = 0;
             var lowestWavelengthDifference = Math.Abs(currentWavelength - activeConfiguration.wavelength);
@@ -238,7 +251,7 @@ namespace FNPlugin.Microwave
 
         public float GetModuleMass(float defaultMass, ModifierStagingSituation sit)
         {
-            var moduleMassDelta = fixedMass ? initialMass : targetMass - initialMass;
+            var moduleMassDelta = fixedMass ? 0 : targetMass - initialMass;
 
             return (float)moduleMassDelta;
         }
@@ -253,10 +266,6 @@ namespace FNPlugin.Microwave
             var info = new StringBuilder();
 
             info.AppendLine("Beam type: " + beamTypeName);
-            //info.AppendLine("wavelength: " + wavelength + "m");
-            //info.AppendLine("atmospheric Absorption: " + atmosphericAbsorptionPercentage + "%");
-            //info.AppendLine("Power to Beam Efficiency: " + efficiencyPercentage + "%");
-
             return info.ToString();
         }
     }
